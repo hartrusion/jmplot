@@ -39,7 +39,7 @@ public class ExamplePlotMY {
         }
 
         plot3y(xdata, y1data, xdata, y2data, xdata, y3data);
-        xlabel("X-Achsen-Beschriftung");
+        xlabel("X axes label");
         ylabel(1, "Primary Y axes");
         ylabel(2, "Secondary Y axes");
         ylabel(3, "Third Y axes");
