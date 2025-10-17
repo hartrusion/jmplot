@@ -32,30 +32,30 @@ import static com.hartrusion.plot.VisualizeData.*;
 public class ExampleSubPlots {
 
     public static void main(String[] args) {
-        float[] xdata = new float[]{0.01F, 0.02F, 0.08F};
+        float[] xdata = new float[]{0.1F, 0.2F, 0.8F};
         float[] ydata = new float[]{7F, 3F, 1F};
         float[] ydata2 = new float[]{12F, 8F, -3F};
 
         subplot(2,2,1);
         plot(xdata, ydata);
-        xlabel("X-Achsen-Beschriftung");
-        ylabel("Beschriftung Y-Achse");
+        xlabel("x label 1");
+        ylabel("y label 1");
         hold("on");
         plot(xdata, ydata2);
-        axis(0F, 0.1F, -5F, 15F);
+        axis(0F, 1F, -5F, 15F);
         
         subplot(2,2,2);
-        xlabel("x oben rechts");
-        ylabel("y oben rechs");
+        xlabel("x label 2");
+        ylabel("y label 2");
         
         subplot(2,2,3);
-        xlabel("x unten links");
-        ylabel("y unten links");
+        xlabel("x label 3");
+        ylabel("y label 3");
         
         subplot(2,2,4);
         plot(xdata, ydata2);
-        xlabel("x unten rechts");
-        ylabel("y unten rechs");
+        xlabel("x label 4");
+        ylabel("y label 4");
     
     }
 }

@@ -45,6 +45,9 @@ public interface Figure {
      * subplot manager is used to display multiple axes on one figure in a grid
      * layout that can be easily accessed and managed. However, it is not
      * necessary to use a subplot to have multiple axes displayed.
+     * <p>
+     * Remember that adding a subplot manager does not remove the default added
+     * axes system so you might want to call clear on the figure.
      *
      * @param sp Instance of subplot manager
      */

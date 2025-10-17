@@ -372,7 +372,7 @@ public final class VisualizeData {
         // try to get the instance of the last used subplot, first, from axes:
         if (currentAxes != null) {
             if (currentAxes.getSubPlot() == null) {
-                currentFigure.clear();
+                currentFigure.clear(); // remove default axes if present
             } else {
                 sp = currentAxes.getSubPlot();
             }
@@ -387,6 +387,7 @@ public final class VisualizeData {
         if (sp == null) {
             sp = new SubPlot();
             sp.initAxes(sizeX, sizeY);
+            currentFigure.clear(); // remove default axes if present
             currentFigure.addSubPlot(sp);
         }
         // Main thing: Set the selected number as current Axes for upcoming plot
