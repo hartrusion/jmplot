@@ -31,7 +31,7 @@ import static com.hartrusion.plot.VisualizeData.ylabel;
  *
  * @author Viktor Alexander Hartung
  */
-public class ExampleSineWave {
+public class ExamplePlot {
     public static void main(String[] args) {
         float[] xdata = new float[50];
         float[] ydata = new float[50];
@@ -41,7 +41,7 @@ public class ExampleSineWave {
         }
 
         plot(xdata, ydata);
-        xlabel("X-Achsen-Beschriftung");
-        ylabel("Beschriftung Y-Achse");
+        xlabel("X label");
+        ylabel("Y label");
     }
 }
