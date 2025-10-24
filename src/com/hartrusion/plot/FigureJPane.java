@@ -24,7 +24,7 @@
 package com.hartrusion.plot;
 
 import java.awt.Graphics;
-// import java.beans.BeanProperty;
+import java.beans.BeanProperty;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +55,8 @@ public class FigureJPane extends JComponent implements Figure {
     private SubPlot subPlot;
 
     private int yRulers = 1;
+    
+    private int[] subplotLayout = {0, 0};
 
     public FigureJPane() {
         axes.add(new Axes()); // construct the default axes
@@ -110,16 +112,18 @@ public class FigureJPane extends JComponent implements Figure {
         return yRulers;
     }
 
-    //@BeanProperty(preferred = true, visualUpdate = true, description
-    //        = "Number of Y Rulers")
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "Number of Y Rulers")
     public void setYRulers(int yRulers) {
-        if (yRulers < 1) {
+        if (yRulers < 0) {
             throw new IllegalArgumentException("Illegal value.");
         }
         int old = this.yRulers;
         if (old != yRulers) {
             axes.clear();
             switch (yRulers) {
+                case 0:
+                    break; // nothing and no default
                 case 1:
                     axes.add(new Axes());
                     break;
@@ -132,6 +136,35 @@ public class FigureJPane extends JComponent implements Figure {
             }
             this.yRulers = yRulers;
             firePropertyChange("yRulers", old, yRulers);
+        }
+    }
+    
+    public int[] getSubplotLayout() {
+        return subplotLayout;
+    }
+
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "Subplot Layout")
+    public void setSubplotLayout(int[] subplotLayout) {
+        if (subplotLayout.length != 2) {
+            throw new IllegalArgumentException("Must be array with 2 values.");
+        }
+        if (subplotLayout[0] < 0 || subplotLayout[1] < 0) {
+            throw new IllegalArgumentException("Values must not be negative.");
+        }     
+        if (!java.util.Arrays.equals(this.subplotLayout, subplotLayout)) {
+            
+            int[] old = new int[2]; // remember previous
+            System.arraycopy(this.subplotLayout, 0, old, 0, 2);
+            this.subplotLayout = subplotLayout;
+           
+            // Apply: Create new subplot
+            subPlot = null; // dump
+            SubPlot sp = new SubPlot();
+            sp.initAxes(subplotLayout[0], subplotLayout[1]);
+            addSubPlot(sp);
+            
+            firePropertyChange("subplotLayout", old, subplotLayout);
         }
     }
 }
