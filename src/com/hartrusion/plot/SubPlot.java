@@ -98,7 +98,6 @@ public class SubPlot {
         float ySpacing = 1 / ((float) sizeY);
         for (int idx = 0; idx < sizeY; idx++) {
             for (int jdx = 0; jdx < sizeX; jdx++) {
-                System.out.println(idx * sizeX + jdx);
                 axes.get(idx * sizeX + jdx).setPosition(
                         xSpacing * ((float) jdx)
                         + axesPositions[0] / ((float) sizeX),
