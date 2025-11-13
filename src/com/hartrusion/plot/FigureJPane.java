@@ -53,20 +53,20 @@ public class FigureJPane extends JComponent implements Figure {
      * placements and so on.
      */
     private SubPlot subPlot;
-
+    
     private int yRulers = 1;
     
     private int[] subplotLayout = {0, 0};
-
+    
     public FigureJPane() {
         axes.add(new Axes()); // construct the default axes
     }
-
+    
     @Override
     public void addAxes(Axes a) {
         axes.add(a);
     }
-
+    
     @Override
     public Axes getLastAxes() {
         if (axes.isEmpty()) {
@@ -74,23 +74,23 @@ public class FigureJPane extends JComponent implements Figure {
         }
         return axes.get(0);
     }
-
+    
     @Override
     public void addSubPlot(SubPlot sp) {
         subPlot = sp;
     }
-
+    
     @Override
     public SubPlot getSubPlot() {
         return subPlot;
     }
-
+    
     @Override
     public void clear() {
         subPlot = null;
         axes.clear();
     }
-
+    
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -107,13 +107,13 @@ public class FigureJPane extends JComponent implements Figure {
             }
         }
     }
-
+    
     public int getYRulers() {
         return yRulers;
     }
-
+    
     @BeanProperty(preferred = true, visualUpdate = true, description
-            = "Number of Y Rulers")
+            = "Number of Y Rulers. 0 for no main plot.")
     public void setYRulers(int yRulers) {
         if (yRulers < 0) {
             throw new IllegalArgumentException("Illegal value.");
@@ -142,7 +142,7 @@ public class FigureJPane extends JComponent implements Figure {
     public int[] getSubplotLayout() {
         return subplotLayout;
     }
-
+    
     @BeanProperty(preferred = true, visualUpdate = true, description
             = "Subplot Layout")
     public void setSubplotLayout(int[] subplotLayout) {
@@ -151,13 +151,13 @@ public class FigureJPane extends JComponent implements Figure {
         }
         if (subplotLayout[0] < 0 || subplotLayout[1] < 0) {
             throw new IllegalArgumentException("Values must not be negative.");
-        }     
+        }        
         if (!java.util.Arrays.equals(this.subplotLayout, subplotLayout)) {
             
             int[] old = new int[2]; // remember previous
             System.arraycopy(this.subplotLayout, 0, old, 0, 2);
             this.subplotLayout = subplotLayout;
-           
+
             // Apply: Create new subplot
             subPlot = null; // dump
             SubPlot sp = new SubPlot();
@@ -165,6 +165,30 @@ public class FigureJPane extends JComponent implements Figure {
             addSubPlot(sp);
             
             firePropertyChange("subplotLayout", old, subplotLayout);
+        }
+    }
+    
+    public float[] getSubplotPosition() {
+        if (subPlot == null) {
+            return null;
+        }
+        return subPlot.getAxesPositions();
+    }
+    
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "Subplot position values")
+    public void setSubplotPosition(float[] subplotPosition) {
+        if (subplotPosition.length != 4) {
+            throw new IllegalArgumentException("Must be array with 4 values.");
+        }
+        if (subplotPosition[2] < 0 || subplotPosition[3] < 0) {
+            throw new IllegalArgumentException("Size values must be positive.");
+        }
+        if (subPlot != null) {
+            float[] old = new float[4]; // remember previous
+            System.arraycopy(subPlot.getAxesPositions(), 0, old, 0, 2);
+            subPlot.setAxesPositions(subplotPosition);
+            firePropertyChange("subplotPosition", old, subplotPosition);
         }
     }
 }

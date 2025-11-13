@@ -39,9 +39,20 @@ public class SubPlot {
      * relative to the border of the embedding figure. This is used to calculate
      * the new positions when splitting the frame for multiple axes boxes.
      */
-    private static final float[] DEFAULT_AXES_POSITION
+    private float[] axesPositions
             // = new float[]{0.13F, 0.11F, 0.775F, 0.815F};
             = new float[]{0.22F, 0.2F, 0.67F, 0.7F};
+    
+    private int sizeX, sizeY;
+
+    public float[] getAxesPositions() {
+        return axesPositions;
+    }
+
+    public void setAxesPositions(float[] axesPositions) {
+        this.axesPositions = axesPositions;
+        updateAxesPositions();
+    }
 
     private List<Axes> axes = new ArrayList<>();
 
@@ -62,20 +73,39 @@ public class SubPlot {
      * @param sizeY
      */
     public void initAxes(int sizeX, int sizeY) {
+        this.sizeX = sizeX;
+        this.sizeY = sizeY;
+        for (int idx = 0; idx < sizeY; idx++) {
+            for (int jdx = 0; jdx < sizeX; jdx++) {
+                Axes a = new Axes();
+                axes.add(a);
+                a.setSubPlot(this);
+            }
+        }
+        updateAxesPositions();
+    }
+    
+    /**
+     * Updates the axes positions according to the set axesPosition values.
+     */
+    private void updateAxesPositions() {
+        /*        x=2        axes.get( )
+        *      0 0   0 1   ->   0   1
+        * y=3  1 0   1 1        2   3
+        *      2 0   2 1        4   5
+        */
         float xSpacing = 1 / ((float) sizeX);
         float ySpacing = 1 / ((float) sizeY);
         for (int idx = 0; idx < sizeY; idx++) {
             for (int jdx = 0; jdx < sizeX; jdx++) {
-                Axes a = new Axes();
-                a.setPosition(
+                System.out.println(idx * sizeX + jdx);
+                axes.get(idx * sizeX + jdx).setPosition(
                         xSpacing * ((float) jdx)
-                        + DEFAULT_AXES_POSITION[0] / ((float) sizeX),
+                        + axesPositions[0] / ((float) sizeX),
                         ySpacing * ((float) (sizeY - idx - 1))
-                        + DEFAULT_AXES_POSITION[1] / ((float) sizeY),
-                        DEFAULT_AXES_POSITION[2] / ((float) sizeX),
-                        DEFAULT_AXES_POSITION[3] / ((float) sizeY));
-                axes.add(a);
-                a.setSubPlot(this);
+                        + axesPositions[1] / ((float) sizeY),
+                        axesPositions[2] / ((float) sizeX),
+                        axesPositions[3] / ((float) sizeY));
             }
         }
     }
