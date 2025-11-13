@@ -48,9 +48,9 @@ class YAxisRuler extends AxisRuler {
     /**
      * Updates the draw coordinates for the axes, will be called from paint
      * component of the parent Axes object containing this one.
-     * 
+     *
      * @param xaxis Reference to the X-Axis ruler object to get the X-Position
-     *              where the axes starts and ends.
+     * where the axes starts and ends.
      */
     public void updatePlacement(XAxisRuler xaxis) {
         switch (location) {
@@ -69,7 +69,7 @@ class YAxisRuler extends AxisRuler {
     /**
      * Manually sets the placement in X direction where this Y ruler will be
      * placed on the drawing area. Used to set the placement manually.
-     * 
+     *
      * @param placement
      */
     public void setPlacement(int placement) {
@@ -120,9 +120,9 @@ class YAxisRuler extends AxisRuler {
                         tickCoordinates[idx] + 5); // y: a bit down
                 // Track the string withs for end positon
                 outerYTickLabelPosition = Math.max(outerYTickLabelPosition,
-                        placement + 5 
-                            + fm.getMaxAscent()
-                            + fm.stringWidth(tickLabels[idx]));
+                        placement + 5
+                        + fm.getMaxAscent()
+                        + fm.stringWidth(tickLabels[idx]));
             } else {
                 // align them right by using the string width
                 g.drawString(tickLabels[idx],
@@ -140,7 +140,7 @@ class YAxisRuler extends AxisRuler {
             if (location.equals("right")) {
                 // Y-Label on the right side:
                 xPosition = Math.max(
-                        outerYTickLabelPosition + 10,
+                        outerYTickLabelPosition - 2,
                         placement + 0);
             } else {
                 // old: 40 px away from Y-Axes line with:
@@ -152,18 +152,25 @@ class YAxisRuler extends AxisRuler {
                 //        placement - 40);
                 // Even newer: Place at the end of the tick labels
                 xPosition = Math.min(
-                    outerYTickLabelPosition + 3,
-                    placement - 0);
+                        outerYTickLabelPosition - 10,
+                        placement - 5);
             }
 
+            // Rotate coordinate system but keep parent transformation which
+            // shifted the coordinates already in parent element.
             AffineTransform previousTransform = ((Graphics2D) g).getTransform();
-            AffineTransform rotTrans = AffineTransform.getQuadrantRotateInstance(3);
-            ((Graphics2D) g).setTransform(rotTrans);
-            // Rotation is done by coordinate system rotation so the argument
-            // are a bit weird: first number is Y from top as negative number,
-            // second is X from the left side.
-            g.drawString(label, -yPosition, xPosition);
+            AffineTransform withRot = new AffineTransform(previousTransform);
+            withRot.concatenate(AffineTransform.getRotateInstance(
+                    -Math.PI / 2, xPosition, yPosition));
+            ((Graphics2D) g).setTransform(withRot);
+            ((Graphics2D) g).drawString(label, xPosition, yPosition);
             ((Graphics2D) g).setTransform(previousTransform); // undo transform
+
+            // Another solution:
+            // Graphics2D g2 = (Graphics2D) g.create();
+            // g2.rotate(-Math.PI / 2, xPosition, yPosition);
+            // g2.drawString(label, xPosition, yPosition);
+            // g2.dispose(); // dump it
         }
     }
 }
