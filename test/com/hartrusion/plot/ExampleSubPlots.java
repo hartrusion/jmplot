@@ -25,20 +25,38 @@ package com.hartrusion.plot;
 
 import static com.hartrusion.plot.VisualizeData.*;
 
-public class ExamplePlotYY {
-    public static void main(String[] args) {
-        float[] xdata = new float[20];
-        float[] y1data = new float[20];
-        float[] y2data = new float[20];
-        for (int idx = 0; idx < xdata.length; idx++) {
-            xdata[idx] = 0.1F * (float) idx;
-            y1data[idx] = (float) Math.sin((double) xdata[idx]);
-            y2data[idx] = 0.7F * (float) Math.cos((double) xdata[idx]);
-        }
+/**
+ * Creates a 2x2 sub-plot layout and adds some lines to it.
+ *
+ * @author Viktor Alexander Hartung
+ */
+public class ExampleSubPlots {
 
-        plotyy(xdata, y1data, xdata, y2data);
-        xlabel("X-Achsen-Beschriftung");
-        ylabel(1, "Primary Y axes");
-        ylabel(2, "Secondary Y axes");
+    public static void main(String[] args) {
+        float[] xdata = new float[]{0.1F, 0.2F, 0.8F};
+        float[] ydata = new float[]{7F, 3F, 1F};
+        float[] ydata2 = new float[]{12F, 8F, -3F};
+
+        subplot(2,2,1);
+        plot(xdata, ydata);
+        xlabel("x label 1");
+        ylabel("y label 1");
+        hold("on");
+        plot(xdata, ydata2);
+        axis(0F, 1F, -5F, 15F);
+        
+        subplot(2,2,2);
+        xlabel("x label 2");
+        ylabel("y label 2");
+        
+        subplot(2,2,3);
+        xlabel("x label 3");
+        ylabel("y label 3");
+        
+        subplot(2,2,4);
+        plot(xdata, ydata2);
+        xlabel("x label 4");
+        ylabel("y label 4");
+    
     }
 }

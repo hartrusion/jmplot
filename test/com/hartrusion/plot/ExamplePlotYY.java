@@ -25,23 +25,25 @@ package com.hartrusion.plot;
 
 import static com.hartrusion.plot.VisualizeData.*;
 
-public class ExamplePlotMY {
+/**
+ * Creates a line plot with two data series and separate y axes.
+ *
+ * @author Viktor Alexander Hartung
+ */
+public class ExamplePlotYY {
     public static void main(String[] args) {
         float[] xdata = new float[20];
         float[] y1data = new float[20];
         float[] y2data = new float[20];
-        float[] y3data = new float[20];
         for (int idx = 0; idx < xdata.length; idx++) {
             xdata[idx] = 0.1F * (float) idx;
             y1data[idx] = (float) Math.sin((double) xdata[idx]);
             y2data[idx] = 0.7F * (float) Math.cos((double) xdata[idx]);
-            y3data[idx] = 0.2F * xdata[idx];
         }
 
-        plot3y(xdata, y1data, xdata, y2data, xdata, y3data);
-        xlabel("X axes label");
+        plotyy(xdata, y1data, xdata, y2data);
+        xlabel("X-Achsen-Beschriftung");
         ylabel(1, "Primary Y axes");
         ylabel(2, "Secondary Y axes");
-        ylabel(3, "Third Y axes");
     }
 }

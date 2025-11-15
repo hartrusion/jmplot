@@ -23,39 +23,26 @@
  */
 package com.hartrusion.plot;
 
-import static com.hartrusion.plot.VisualizeData.*;
+import static com.hartrusion.plot.VisualizeData.plot;
+import static com.hartrusion.plot.VisualizeData.xlabel;
+import static com.hartrusion.plot.VisualizeData.ylabel;
 
 /**
+ * Creates a very simple XY line plot using the VisualizeData methods.
  *
  * @author Viktor Alexander Hartung
  */
-public class ExampleSubPlots {
-
+public class ExamplePlot {
     public static void main(String[] args) {
-        float[] xdata = new float[]{0.1F, 0.2F, 0.8F};
-        float[] ydata = new float[]{7F, 3F, 1F};
-        float[] ydata2 = new float[]{12F, 8F, -3F};
+        float[] xdata = new float[50];
+        float[] ydata = new float[50];
+        for (int idx = 0; idx < xdata.length; idx++) {
+            xdata[idx] = 0.1F * (float) idx;
+            ydata[idx] = (float) Math.sin((double) xdata[idx]);
+        }
 
-        subplot(2,2,1);
         plot(xdata, ydata);
-        xlabel("x label 1");
-        ylabel("y label 1");
-        hold("on");
-        plot(xdata, ydata2);
-        axis(0F, 1F, -5F, 15F);
-        
-        subplot(2,2,2);
-        xlabel("x label 2");
-        ylabel("y label 2");
-        
-        subplot(2,2,3);
-        xlabel("x label 3");
-        ylabel("y label 3");
-        
-        subplot(2,2,4);
-        plot(xdata, ydata2);
-        xlabel("x label 4");
-        ylabel("y label 4");
-    
+        xlabel("X label");
+        ylabel("Y label");
     }
 }

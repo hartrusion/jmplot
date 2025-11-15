@@ -79,7 +79,7 @@ public class Axes {
      * Adds a line object to this Axis. Depending if hold is on or off, the
      * previous line or lines might be replaced.
      *
-     * @param l
+     * @param l Line object that will be drawn within this axis.
      */
     public void addLine(Line l) {
         if (!hold) {

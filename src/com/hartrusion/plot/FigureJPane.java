@@ -23,7 +23,7 @@
  */
 package com.hartrusion.plot;
 
-import java.awt.Graphics;
+import java.awt.*;
 import java.beans.BeanProperty;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,8 +35,8 @@ import javax.swing.JComponent;
  * manually added axes (the simplest version is one axes here) or a set of axes
  * for a subplot arrangement.
  * <p>
- * Contrary to the matlab figure, this extends a panel and can therefore used as
- * a drawing area on any guy. If you use NetBeans GUI builder, just drag and
+ * Contrary to the matlab figure, this extends a panel and can therefore be used
+ * as a drawing area on any GUI. If you use NetBeans GUI builder, just drag and
  * drop the class onto your GUI.
  *
  * @author Viktor Alexander Hartung
@@ -94,6 +94,8 @@ public class FigureJPane extends JComponent implements Figure {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
         for (Axes a : axes) {
             a.awtPaintComponents(
                     g, (float) getWidth() - 1, (float) getHeight() - 1);

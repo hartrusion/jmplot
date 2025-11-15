@@ -3,6 +3,10 @@ A very rudimentary library aiming to be compatible with the MATLAB/Octave
 syntax but for java. It's one of my first projects and lacks major features 
 of professional tools.
 
+It features multiple Y axes which is something I like to use in my projects.
+
+![Example](images/ExamplePlotMY.png)
+
 The package can be used in two ways. Either it can be implemented in AWT or 
 Swing GUI or, using the VisualizeData static classes, a plot command can be 
 placed anywhere and will behave like it does in traditional beginners .m 

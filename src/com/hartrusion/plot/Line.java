@@ -56,11 +56,11 @@ public class Line {
     private float xMin, xMax, yMin, yMax;
 
     /**
-     * To determine wheter the class holds the data to plot or if a reference to
-     * external data is used. If setData is used, the data will be copied to
+     * To determine whether the class holds the data to plot or if a reference
+     * to external data is used. If setData is used, the data will be copied to
      * this line object and min and max values will be only calculated once. If
      * external data is used, min and max will be calculated each time the
-     * valuues are requested.
+     * values are requested.
      */
     private boolean externalDataSource = false;
 
@@ -68,11 +68,11 @@ public class Line {
     // 0: Line can be drawn over the box border
     private static int BOX_PADDING = 1;
 
-    @SuppressWarnings("NonPublicExported")
     /**
      * Called from the axes object when adding the line to the axes. Creates the
      * link between axes and the line by making the rulers known to the line.
      */
+    @SuppressWarnings("NonPublicExported")
     public void initComponent(AxisRuler xaxis, AxisRuler yaxis) {
         this.xaxis = xaxis;
         this.yaxis = yaxis;
@@ -88,7 +88,7 @@ public class Line {
      */
     public void setData(float[] x, float[] y) {
         if (x.length != y.length) {
-            throw new IllegalArgumentException("Length missmatch");
+            throw new IllegalArgumentException("Length mismatch");
         }
         externalDataSource = false;
         if (xdata == null || ydata == null) {
@@ -131,7 +131,7 @@ public class Line {
      */
     public void setDataSource(float[] x, float[] y) {
         if (x.length != y.length) {
-            throw new IllegalArgumentException("Length missmatch");
+            throw new IllegalArgumentException("Length mismatch");
         }
         externalDataSource = true;
         xdata = x;
@@ -151,7 +151,7 @@ public class Line {
         Shape previousClip = g.getClip(); // remember current setting
 
         // x line start and end is something like 50 and 450, while the y line
-        // is reversed so we have end-start for x witdth start-end for y height.
+        // is reversed so we have end-start for x with start-end for y height.
         // + and - 1 is to not draw over the box and ruler lines.
         Rectangle boxArea = new Rectangle(
                 xaxis.getCoordinateLineStart() + BOX_PADDING,

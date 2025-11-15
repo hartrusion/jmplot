@@ -23,25 +23,30 @@
  */
 package com.hartrusion.plot;
 
-import static com.hartrusion.plot.VisualizeData.plot;
-import static com.hartrusion.plot.VisualizeData.xlabel;
-import static com.hartrusion.plot.VisualizeData.ylabel;
+import static com.hartrusion.plot.VisualizeData.*;
 
 /**
+ * Creates a line plot with three data series and separate y axes.
  *
  * @author Viktor Alexander Hartung
  */
-public class ExamplePlot {
+public class ExamplePlotMY {
     public static void main(String[] args) {
-        float[] xdata = new float[50];
-        float[] ydata = new float[50];
+        float[] xdata = new float[20];
+        float[] y1data = new float[20];
+        float[] y2data = new float[20];
+        float[] y3data = new float[20];
         for (int idx = 0; idx < xdata.length; idx++) {
             xdata[idx] = 0.1F * (float) idx;
-            ydata[idx] = (float) Math.sin((double) xdata[idx]);
+            y1data[idx] = (float) Math.sin((double) xdata[idx]);
+            y2data[idx] = 0.7F * (float) Math.cos((double) xdata[idx]);
+            y3data[idx] = 0.2F * xdata[idx];
         }
 
-        plot(xdata, ydata);
-        xlabel("X label");
-        ylabel("Y label");
+        plot3y(xdata, y1data, xdata, y2data, xdata, y3data);
+        xlabel("X axes label");
+        ylabel(1, "Primary Y axes");
+        ylabel(2, "Secondary Y axes");
+        ylabel(3, "Third Y axes");
     }
 }

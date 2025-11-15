@@ -28,7 +28,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Manages multiple axes objects arranged to a uniform grid.
+ * Manages multiple axes objects arranged to a uniform grid. The axes objects
+ * will be arranged in a grid, each axes can be accessed using the getAxes
+ * method.
  *
  * @author Viktor Alexander Hartung
  */
