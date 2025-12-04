@@ -32,7 +32,9 @@ public class YYAxes extends Axes {
             // Mostly the same as the super method but line gets assigned with
             // the secondary y-axis.
             lines.add(l);
-            l.setLineColor(new Color(0, 127, 0));
+            if (l.getLineColor() == null) {
+                l.setLineColor(new Color(0, 127, 0));
+            }
             l.initComponent(xaxis, secondaryYaxis);
             VisualizeData.setCurrentAxes(this);
         } else if (axes == 1) {

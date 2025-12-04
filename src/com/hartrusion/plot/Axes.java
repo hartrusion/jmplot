@@ -74,7 +74,6 @@ public class Axes {
 
 //    Axes() {
 //    }
-
     /**
      * Adds a line object to this Axis. Depending if hold is on or off, the
      * previous line or lines might be replaced.
@@ -86,21 +85,25 @@ public class Axes {
             lines.clear();
         }
         lines.add(l);
-        // Auto-Assign line colors when adding:
-        switch (lines.indexOf(l)) {
-            // case 0 -> l.setLineColor(Color.BLUE); // blue is default
-            case 1: // 2nd line
-                l.setLineColor(new Color(0, 127, 0)); // dark green
-                break;
-            case 2: // 3rd line
-                l.setLineColor(Color.RED);
-                break;
-            case 3:
-                l.setLineColor(new Color(128, 128, 0)); // dark yellow
-                break;
-            case 4:
-                l.setLineColor(new Color(128, 0, 128)); // violet
-                break;
+        // Auto-Assign line colors when adding if no line color is defined yet
+        if (l.getLineColor() == null) {
+            switch (lines.indexOf(l)) {
+                case 0:
+                    l.setLineColor(Color.BLUE);
+                    break;
+                case 1: // 2nd line
+                    l.setLineColor(new Color(0, 127, 0)); // dark green
+                    break;
+                case 2: // 3rd line
+                    l.setLineColor(Color.RED);
+                    break;
+                case 3:
+                    l.setLineColor(new Color(128, 128, 0)); // dark yellow
+                    break;
+                case 4:
+                    l.setLineColor(new Color(128, 0, 128)); // violet
+                    break;
+            }
         }
         l.initComponent(xaxis, yaxis);
         // Adding a line will set this axes to the last current axes.

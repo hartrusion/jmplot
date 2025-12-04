@@ -47,7 +47,7 @@ public class Line {
     private boolean noXData;
     private boolean noYData;
 
-    private Color lineColor = Color.BLUE;
+    private Color lineColor = null;
     private Stroke lineStroke = new BasicStroke(1F);
 
     private AxisRuler xaxis;
@@ -180,6 +180,9 @@ public class Line {
     }
 
     private void setGraphics(Graphics2D g2) {
+        if (lineColor == null) {
+            lineColor = Color.BLUE; // assign default if its still not done
+        }
         g2.setColor(lineColor);
         g2.setStroke(lineStroke);
     }
@@ -264,6 +267,16 @@ public class Line {
         return !noYData;
     }
 
+    /**
+     * Get the current color for this line object. Can return null if the color
+     * is not yet set, which is default for new created line objects.
+     * 
+     * @return Color or null if undefined.
+     */
+    public Color getLineColor() {
+        return lineColor;
+    }
+    
     public void setLineColor(Color lineColor) {
         this.lineColor = lineColor;
     }

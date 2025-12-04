@@ -51,7 +51,7 @@ public class MYAxes extends YYAxes {
      * would be the outside of the box. The visible box will be smaller but
      * aligned to the right.
      */
-    private final float[] outerPosition 
+    private final float[] outerPosition
             = new float[]{0.13F, 0.11F, 0.775F, 0.815F};
 
     public MYAxes() {
@@ -61,12 +61,12 @@ public class MYAxes extends YYAxes {
         thirdAxis.setColor(new Color(255, 0, 0));
         myaxes.add(thirdAxis);
     }
-    
+
     /**
-     * Each time a target axes nr is called it will be checked if it is 
-     * existing and if not it will be created.
-     * 
-     * @param target 
+     * Each time a target axes nr is called it will be checked if it is existing
+     * and if not it will be created.
+     *
+     * @param target
      */
     private void checkAndCreateAxes(int target) {
         if (target > myaxes.size() + 2) {
@@ -96,23 +96,25 @@ public class MYAxes extends YYAxes {
         // Check if the axes nr does exist, if not, create all of them
         checkAndCreateAxes(target);
         lines.add(l);
-        switch (target) {
-            case 3:
-                l.setLineColor(new Color(255, 0, 0));
-                break;
-            case 4: // 4th axes (3rd on the left) dark yellow
-                l.setLineColor(new Color(128, 128, 0));
-                break;
-            case 5: // 5th axes, violet
-                l.setLineColor(new Color(128, 0, 128));
-                break;
-            default:
-                break;
+        if (l.getLineColor() == null) {
+            switch (target) {
+                case 3:
+                    l.setLineColor(new Color(255, 0, 0));
+                    break;
+                case 4: // 4th axes (3rd on the left) dark yellow
+                    l.setLineColor(new Color(128, 128, 0));
+                    break;
+                case 5: // 5th axes, violet
+                    l.setLineColor(new Color(128, 0, 128));
+                    break;
+                default:
+                    break;
+            }
         }
         l.initComponent(xaxis, myaxes.get(target - 3));
         VisualizeData.setCurrentAxes(this);
     }
-    
+
     @Override
     public void yLim(int target, float y1, float y2) {
         if (target <= 2) {
@@ -137,7 +139,7 @@ public class MYAxes extends YYAxes {
     @Override
     public void autoY() {
         super.autoY();
-        
+
     }
 
     @Override
