@@ -65,8 +65,9 @@ public class Line {
     private boolean externalDataSource = false;
 
     // 1: Line ends excatly before it overwrites the box lines.
-    // 0: Line can be drawn over the box border
-    private static int BOX_PADDING = 1;
+    // 0: Line can be drawn exactly on the box border line
+    // -1: Line will be drawn 1 px over the box border line.
+    private static int BOX_PADDING = 0;
 
     /**
      * Called from the axes object when adding the line to the axes. Creates the
@@ -157,9 +158,9 @@ public class Line {
                 xaxis.getCoordinateLineStart() + BOX_PADDING,
                 yaxis.getCoordinateLineEnd() + BOX_PADDING,
                 xaxis.getCoordinateLineEnd()
-                - xaxis.getCoordinateLineStart() - BOX_PADDING,
+                - xaxis.getCoordinateLineStart() - 2 * BOX_PADDING + 1,
                 yaxis.getCoordinateLineStart()
-                - yaxis.getCoordinateLineEnd() - BOX_PADDING);
+                - yaxis.getCoordinateLineEnd() - 2 * BOX_PADDING + 1);
         g.setClip(boxArea);
         // Plot lines between xdata points
         for (int idx = 0; idx < xdata.length - 1; idx++) {

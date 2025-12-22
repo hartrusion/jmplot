@@ -183,7 +183,7 @@ public class Axes {
         // where to draw the ruler.
         xaxis.updatePlacement(yaxis);
         yaxis.updatePlacement(xaxis);
-
+        
         if (xaxis.isVisible()) {
             xaxis.awtPaintComponents(g);
         }
@@ -198,7 +198,7 @@ public class Axes {
             }
             l.awtPaintComponents(g);
         }
-    }
+        }
 
     public void xLim(float x1, float x2) {
         xaxis.setLim(x1, x2);
