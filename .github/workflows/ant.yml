@@ -18,7 +18,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 
@@ -37,42 +36,67 @@ jobs:
         name: Package
         path: build/jar/*.jar
         # optional: if-no-files-found: warn
+        
+  probe-artifacts:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      has_artifacts: ${{ steps.check.outputs.has_artifacts }}
+    steps:
+      - name: Check for artifacts named "Package"
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_URL: https://api.github.com/repos/${{ github.repository }}
+          ARTIFACT_NAME: Package
+        run: |
+          set -euo pipefail
+          # List artifacts (first page). If you expect >100 artifacts, implement paging.
+          resp=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$API_URL/actions/artifacts?per_page=100")
+          # Count artifacts with the desired name
+          count=$(echo "$resp" | jq -r '.artifacts[] | select(.name == env.ARTIFACT_NAME) | .id' | wc -l)
+          if [ "$count" -gt 0 ]; then
+            echo "Found $count artifact(s) named '$ARTIFACT_NAME'."
+            echo "has_artifacts=true" >> $GITHUB_OUTPUT
+          else
+            echo "No artifacts named '$ARTIFACT_NAME' found."
+            echo "has_artifacts=false" >> $GITHUB_OUTPUT
+          fi
+          
+  cleanup:
+    needs: probe-artifacts
+    # run only if probe found artifacts; otherwise the job is SKIPPED (grey in UI)
+    if: needs.probe-artifacts.outputs.has_artifacts == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete older 'Package' artifacts (keep only the newest)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_URL: https://api.github.com/repos/${{ github.repository }}
+          ARTIFACT_NAME: Package
+        run: |
+          set -euo pipefail
+          echo "Listing artifacts..."
+          resp=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$API_URL/actions/artifacts?per_page=100")
+          # produce lines: created_at id, sorted newest first
+          artifacts=$(echo "$resp" | jq -r '.artifacts[] | select(.name == env.ARTIFACT_NAME) | "\(.created_at) \(.id)"' | sort -r)
+          echo "Matched artifacts (newest first):"
+          echo "$artifacts"
 
-    - name: Delete older 'Package' artifacts (keep only the newest)
-      if: ${{ success() }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        API_URL: https://api.github.com/repos/${{ github.repository }}
-        ARTIFACT_NAME: Package
-      run: |
-        set -euo pipefail
+          ids_to_delete=$(echo "$artifacts" | tail -n +2 | awk '{print $2}')
+          if [ -z "$ids_to_delete" ]; then
+            echo "Only newest artifact exists — nothing to delete."
+            exit 0
+          fi
 
-        echo "Listing artifacts for repository $GITHUB_REPOSITORY ..."
-        resp=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$API_URL/actions/artifacts?per_page=100")
-        # Collect artifacts with the target name, each line: "<created_at> <id>"
-        artifacts=$(echo "$resp" | jq -r '.artifacts[] | select(.name == env.ARTIFACT_NAME) | "\(.created_at) \(.id)"' | sort -r)
-
-        if [ -z "$artifacts" ]; then
-          echo "No artifacts named '$ARTIFACT_NAME' found — nothing to delete."
-          exit 0
-        fi
-
-        echo "Found artifacts (most recent first):"
-        echo "$artifacts"
-
-        # Keep the first (most recent), delete the rest
-        ids_to_delete=$(echo "$artifacts" | tail -n +2 | awk '{print $2}')
-        if [ -z "$ids_to_delete" ]; then
-          echo "Only the newest artifact exists — nothing to delete."
-          exit 0
-        fi
-
-        for id in $ids_to_delete; do
-          echo "Deleting artifact id=$id ..."
-          del_resp=$(curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" "$API_URL/actions/artifacts/$id")
-          # The DELETE call returns an empty body and 204 on success, curl -s won't show that;
-          # we assume deletion succeeded if exit code is 0. Optionally check HTTP status for stronger guarantees.
-          echo "Deleted artifact id=$id"
-        done
-
-        echo "Older 'Package' artifacts deleted. Only the newest remains."
+          for id in $ids_to_delete; do
+            echo "Deleting artifact id=$id ..."
+            http_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: token $GITHUB_TOKEN" "$API_URL/actions/artifacts/$id")
+            if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
+              echo "Deleted artifact id=$id (status $http_status)"
+            else
+              echo "Failed to delete artifact id=$id (status $http_status)"
+              exit 1
+            fi
+          done
+          echo "Old artifacts removed."
