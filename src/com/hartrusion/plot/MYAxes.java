@@ -74,10 +74,10 @@ public class MYAxes extends YYAxes {
                 YAxisRuler addAxes = new YAxisRuler();
                 // assign default colors
                 switch (idx) {
-                    case 2: // 4th axes (3rd on the left) dark yellow
+                    case 1: // 4th axes (3rd on the left) dark yellow
                         addAxes.setColor(new Color(128, 128, 0));
                         break;
-                    case 3: // 5th axes, violet
+                    case 2: // 5th axes, violet
                         addAxes.setColor(new Color(128, 0, 128));
                         break;
                     default:
