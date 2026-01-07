@@ -70,7 +70,7 @@ public class MYAxes extends YYAxes {
      */
     private void checkAndCreateAxes(int target) {
         if (target > myaxes.size() + 2) {
-            for (int idx = myaxes.size(); idx <= target; idx++) {
+            for (int idx = myaxes.size(); idx <= target - 3; idx++) {
                 YAxisRuler addAxes = new YAxisRuler();
                 // assign default colors
                 switch (idx) {
@@ -83,6 +83,7 @@ public class MYAxes extends YYAxes {
                     default:
                         break;
                 }
+                myaxes.add(addAxes);
             }
         }
     }
