@@ -183,7 +183,7 @@ public class Axes {
         // where to draw the ruler.
         xaxis.updatePlacement(yaxis);
         yaxis.updatePlacement(xaxis);
-        
+
         if (xaxis.isVisible()) {
             xaxis.awtPaintComponents(g);
         }
@@ -198,7 +198,7 @@ public class Axes {
             }
             l.awtPaintComponents(g);
         }
-        }
+    }
 
     public void xLim(float x1, float x2) {
         xaxis.setLim(x1, x2);
@@ -332,5 +332,100 @@ public class Axes {
 
     public void setSubPlot(SubPlot parent) {
         this.parentSubPlot = parent;
+    }
+
+    /**
+     * To identify if an axes object is part of the 
+     * 
+     * @param x
+     * @param y
+     * @return 
+     */
+    public boolean containsPoint(int x, int y) {
+        return x >= boxCoordinates[0] && x <= boxCoordinates[2]
+                && y >= boxCoordinates[1] && y <= boxCoordinates[3];
+    }
+
+    /**
+     * Zooms the axes by setting the limits to a box that is described by two
+     * points, used for zooming when selecting a box rectangle.
+     *
+     * @param startX Screen coordinate (pixels)
+     * @param startY Screen coordinate (pixels)
+     * @param endX Screen coordinate (pixels)
+     * @param endY Screen coordinate (pixels)
+     */
+    public void applyZoomBox(int startX, int startY, int endX, int endY) {
+        float x1 = xaxis.getValueForCoordinate(startX);
+        float x2 = xaxis.getValueForCoordinate(endX);
+        float minX = Math.min(x1, x2);
+        float maxX = Math.max(x1, x2);
+        if (minX < maxX) {
+            xLim(minX, maxX);
+        }
+
+        float y1 = yaxis.getValueForCoordinate(startY);
+        float y2 = yaxis.getValueForCoordinate(endY);
+        float minY = Math.min(y1, y2);
+        float maxY = Math.max(y1, y2);
+        if (minY < maxY) {
+            yLim(minY, maxY);
+        }
+    }
+
+    /**
+     * Zooms the axes in around a given point.
+     *
+     * @param x Screen coordinate (pixels)
+     * @param y Screen coordinate (pixels)
+     * @param factor Zoom factor
+     */
+    public void applyZoomPoint(int x, int y, float factor) {
+        float valX = xaxis.getValueForCoordinate(x);
+        float valY = yaxis.getValueForCoordinate(y);
+        float rangeX = (xaxis.lim[1] - xaxis.lim[0]) * factor;
+        float rangeY = (yaxis.lim[1] - yaxis.lim[0]) * factor;
+
+        float ratioX = (valX - xaxis.lim[0]) / (xaxis.lim[1] - xaxis.lim[0]);
+        float ratioY = (valY - yaxis.lim[0]) / (yaxis.lim[1] - yaxis.lim[0]);
+
+        float minX = valX - rangeX * ratioX;
+        float maxX = valX + rangeX * (1 - ratioX);
+        float minY = valY - rangeY * ratioY;
+        float maxY = valY + rangeY * (1 - ratioY);
+
+        if (minX < maxX) {
+            xLim(minX, maxX);
+        }
+        if (minY < maxY) {
+            yLim(minY, maxY);
+        }
+    }
+
+    /**
+     * Moves the drawn line plot by the given delta values by manipulating x and
+     * y limits.
+     *
+     * @param dx
+     * @param dy
+     */
+    public void applyPan(int dx, int dy) {
+        float valDx = (float) dx * (xaxis.lim[1] - xaxis.lim[0])
+                / (float) (xaxis.coordinates[1] - xaxis.coordinates[0]);
+        float valY1 = yaxis.getValueForCoordinate(boxCoordinates[1]);
+        float valY2 = yaxis.getValueForCoordinate(boxCoordinates[1] + dy);
+        float valDy = valY2 - valY1;
+
+        float minX = xaxis.lim[0] - valDx;
+        float maxX = xaxis.lim[1] - valDx;
+        float minY = yaxis.lim[0] - valDy;
+        float maxY = yaxis.lim[1] - valDy;
+
+        if (minX < maxX) {
+            xLim(minX, maxX);
+        }
+        if (minY < maxY) {
+            yLim(minY, maxY);
+        }
     }
 }

@@ -14,15 +14,15 @@ public class YYAxes extends Axes {
     public YYAxes() {
         secondaryYaxis.setLocation("right");
         secondaryYaxis.setColor(new Color(0, 127, 0));
-        yaxis.setColor(new Color (0,0,255));
+        yaxis.setColor(new Color(0, 0, 255));
     }
 
     /**
      * Adds a line object to the specified axes number.
-     * 
+     *
      * @param l
-     * @param axes Axes number, with 1 being the left primary axes and 2
-     *             being the right secondary axes.
+     * @param axes Axes number, with 1 being the left primary axes and 2 being
+     * the right secondary axes.
      */
     public void addLine(int axes, Line l) {
         if (!hold) {
@@ -56,10 +56,11 @@ public class YYAxes extends Axes {
     }
 
     /**
-     * Sets the y Label for axes systems with more than 1 y axes. 
-     * @param target Axes number, with 1 being the primary (left), 2 being
-     * the secondary (right). 3 and more are added on the left side left to 
-     * the primary axes.
+     * Sets the y Label for axes systems with more than 1 y axes.
+     *
+     * @param target Axes number, with 1 being the primary (left), 2 being the
+     * secondary (right). 3 and more are added on the left side left to the
+     * primary axes.
      * @param s String to write.
      */
     public void ylabel(int target, String s) {
@@ -80,7 +81,7 @@ public class YYAxes extends Axes {
 
     /**
      * Autoscale the given y-Axes.
-     * 
+     *
      * @param target Axes nr (1: primary left, 2: secondary right, 3 and more
      * are additional axes on the left).
      */
@@ -139,6 +140,44 @@ public class YYAxes extends Axes {
                 continue; // skip foreign lines (only for extensions of Axes)
             }
             l.awtPaintComponents(g);
+        }
+    }
+
+    @Override
+    public void applyZoomBox(int startX, int startY, int endX, int endY) {
+        super.applyZoomBox(startX, startY, endX, endY);
+        float y1 = secondaryYaxis.getValueForCoordinate(startY);
+        float y2 = secondaryYaxis.getValueForCoordinate(endY);
+        float minY = Math.min(y1, y2);
+        float maxY = Math.max(y1, y2);
+        if (minY < maxY) {
+            yLim(2, minY, maxY);
+        }
+    }
+
+    @Override
+    public void applyZoomPoint(int x, int y, float factor) {
+        super.applyZoomPoint(x, y, factor);
+        float valY = secondaryYaxis.getValueForCoordinate(y);
+        float rangeY = (secondaryYaxis.lim[1] - secondaryYaxis.lim[0]) * factor;
+        float ratioY = (valY - secondaryYaxis.lim[0]) / (secondaryYaxis.lim[1] - secondaryYaxis.lim[0]);
+        float minY = valY - rangeY * ratioY;
+        float maxY = valY + rangeY * (1 - ratioY);
+        if (minY < maxY) {
+            yLim(2, minY, maxY);
+        }
+    }
+
+    @Override
+    public void applyPan(int dx, int dy) {
+        super.applyPan(dx, dy);
+        float valY1 = secondaryYaxis.getValueForCoordinate(boxCoordinates[1]);
+        float valY2 = secondaryYaxis.getValueForCoordinate(boxCoordinates[1] + dy);
+        float valDy = valY2 - valY1;
+        float minY = secondaryYaxis.lim[0] - valDy;
+        float maxY = secondaryYaxis.lim[1] - valDy;
+        if (minY < maxY) {
+            yLim(2, minY, maxY);
         }
     }
 

@@ -224,6 +224,21 @@ abstract class AxisRuler extends AxisElementProperties {
     }
 
     /**
+     * Calculates the value that is assigned to a certain pixel value.
+     *
+     * @param pixel
+     * @return
+     */
+    public float getValueForCoordinate(int pixel) {
+        if (coordinates[0] == coordinates[1]) {
+            return lim[0];
+        }
+        return lim[0] + (float) (pixel - coordinates[0])
+                * (lim[1] - lim[0])
+                / (float) (coordinates[1] - coordinates[0]);
+    }
+
+    /**
      * Set the location of this ruler.
      *
      * @param s For x-Axis: top, bottom, origin. Y-Axis: left, right, origin
@@ -237,8 +252,8 @@ abstract class AxisRuler extends AxisElementProperties {
     }
 
     /**
-     * Updates the tickCoordinates array and recalulates the tick positions on
-     * the axis. Gets called on each paint of the ui.
+     * Updates the tickCoordinates array and recalculates the tick positions on
+     * the axis. Gets called on each paint of the UI.
      */
     protected final void updateTickCoordinates() {
         if (tickCoordinates.length != tick.length) {

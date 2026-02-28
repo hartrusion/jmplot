@@ -201,4 +201,61 @@ public class MYAxes extends YYAxes {
             l.awtPaintComponents(g);
         }
     }
+
+    @Override
+    public void applyZoomBox(int startX, int startY, int endX, int endY) {
+        super.applyZoomBox(startX, startY, endX, endY);
+        float y1, y2, minY, maxY;
+        float[] origY;
+        for (int idx = 0; idx < myaxes.size(); idx++) {
+            y1 = myaxes.get(idx).getValueForCoordinate(startY);
+            y2 = myaxes.get(idx).getValueForCoordinate(endY);
+            minY = Math.min(y1, y2);
+            maxY = Math.max(y1, y2);
+            if (minY < maxY) {
+                yLim(idx + 3, minY, maxY);
+            }
+        }
+
+    }
+
+    @Override
+    public void applyZoomPoint(int x, int y, float factor) {
+        super.applyZoomPoint(x, y, factor);
+        float valY, rangeY, ratioY, minY, maxY;
+        float[] origY;
+        for (int idx = 0; idx < myaxes.size(); idx++) {
+            valY = myaxes.get(idx).getValueForCoordinate(y);
+            rangeY = (myaxes.get(idx).lim[1] - myaxes.get(idx).lim[0])
+                    * factor;
+            ratioY = (valY - myaxes.get(idx).lim[0])
+                    / (myaxes.get(idx).lim[1] - myaxes.get(idx).lim[0]);
+            minY = valY - rangeY * ratioY;
+            maxY = valY + rangeY * (1 - ratioY);
+            if (minY < maxY) {
+                yLim(idx + 3, minY, maxY);
+            }
+        }
+
+    }
+
+    @Override
+    public void applyPan(int dx, int dy) {
+        super.applyPan(dx, dy);
+        float valY1, valY2, valDy, minY, maxY;
+        float[] origY;
+        for (int idx = 0; idx < myaxes.size(); idx++) {
+            valY1 = myaxes.get(idx)
+                    .getValueForCoordinate(boxCoordinates[1]);
+            valY2 = myaxes.get(idx)
+                    .getValueForCoordinate(boxCoordinates[1] + dy);
+            valDy = valY2 - valY1;
+            minY = myaxes.get(idx).lim[0] - valDy;
+            maxY = myaxes.get(idx).lim[1] - valDy;
+            if (minY < maxY) {
+                yLim(idx + 3, minY, maxY);
+            }
+        }
+
+    }
 }
