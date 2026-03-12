@@ -23,6 +23,7 @@
  */
 package com.hartrusion.plot;
 
+import static com.hartrusion.plot.VisualizeData.gca;
 import static com.hartrusion.plot.VisualizeData.plot;
 import static com.hartrusion.plot.VisualizeData.xlabel;
 import static com.hartrusion.plot.VisualizeData.ylabel;
@@ -44,5 +45,8 @@ public class ExamplePlot {
         plot(xdata, ydata);
         xlabel("X label");
         ylabel("Y label");
+        
+        // Access the generated axes and generate a cursor somewhere.
+        gca().setCursor(2.5F, 0.4F);
     }
 }

@@ -62,6 +62,11 @@ public class Axes {
     protected final List<Line> lines = new ArrayList<>();
 
     /**
+     * Holds references to all cursor objects which will be drawn into this axes
+     */
+    protected final List<Cursor> cursors = new ArrayList<>();
+
+    /**
      * When hold is off, adding a new line will replace the old line plot.
      */
     protected boolean hold = false;
@@ -83,6 +88,7 @@ public class Axes {
     public void addLine(Line l) {
         if (!hold) {
             lines.clear();
+            cursors.clear();
         }
         lines.add(l);
         // Auto-Assign line colors when adding if no line color is defined yet
@@ -134,6 +140,43 @@ public class Axes {
                 }
             }
         }
+    }
+
+    /**
+     * Adds a new cursor object to the axes. Used to add more than one cursor
+     *
+     * @param c Cursor object
+     */
+    public void addCursor(Cursor c) {
+        cursors.add(c);
+        c.initComponent(xaxis, yaxis);
+    }
+
+    /**
+     * Sets a cursor to the specified coordinates. Internally, this either uses
+     * the one existing cursor or generates a new cursor if no cursor is
+     * present. Requires only one or no cursor to be present.
+     *
+     * @param x
+     * @param y
+     */
+    public void setCursor(float x, float y) {
+        if (cursors.size() >= 2) {
+            throw new UnsupportedOperationException("Setting the cursor with "
+                    + "this method does not support more than 1 cursor.");
+        }
+        if (cursors.size() == 0) { // if none is present, generate one.
+            addCursor(new Cursor());
+        }
+        Cursor c = cursors.get(0);
+        c.setPoint(x, y);
+    }
+
+    /**
+     * Removes all cursors from the axes.
+     */
+    public void clearCursors() {
+        cursors.clear();
     }
 
     /**
@@ -197,6 +240,14 @@ public class Axes {
                 continue; // skip foreign lines (only for extensions of Axes)
             }
             l.awtPaintComponents(g);
+        }
+
+        // Draw all cursors
+        for (Cursor c : cursors) {
+            if (c.getYAxis() != yaxis) {
+                continue; // skip cursors not assigned to the y axis of this
+            }
+            c.awtPaintComponents(g);
         }
     }
 
@@ -335,11 +386,11 @@ public class Axes {
     }
 
     /**
-     * To identify if an axes object is part of the 
-     * 
+     * To identify if an axes object is part of the
+     *
      * @param x
      * @param y
-     * @return 
+     * @return
      */
     public boolean containsPoint(int x, int y) {
         return x >= boxCoordinates[0] && x <= boxCoordinates[2]
