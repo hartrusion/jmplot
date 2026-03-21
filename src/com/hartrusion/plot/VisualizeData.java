@@ -138,8 +138,8 @@ public final class VisualizeData {
         plot(x, y);
     }
 
-    public static void plotyy(float[] x1data, float[] y1data, 
-        float[] x2data, float[] y2data) {
+    public static void plotyy(float[] x1data, float[] y1data,
+            float[] x2data, float[] y2data) {
         if (x1data.length != y1data.length) {
             throw new IllegalArgumentException("Length mismatch");
         }
@@ -195,68 +195,68 @@ public final class VisualizeData {
         yyAxes.setHold(prevHold);
     }
 
-    public static void plot3y(float[] x1data, float[] y1data, 
-    float[] x2data, float[] y2data, float[] x3data, float[] y3data) {
-    if (x1data.length != y1data.length) {
-        throw new IllegalArgumentException("Length mismatch");
-    }
-    if (x2data.length != y2data.length) {
-        throw new IllegalArgumentException("Length mismatch");
-    }
-    if (x3data.length != y3data.length) {
-        throw new IllegalArgumentException("Length mismatch");
-    }
-    // This is almost the same as the normal plot command but here we also
-    // need to check if the axes system is of the correct type. Only re-use
-    // a proper MYAxes instead of an axes system.
-    if (currentAxes == null || !(currentAxes instanceof MYAxes)) {
-        if (currentFigure == null) { // is there even an active figure?
-            // if there is no axes known, create one in a new window.
-            FigureJFrame root = new FigureJFrame();
-            root.addWindowListener(new java.awt.event.WindowAdapter() {
-                @Override
-                public void windowClosing(java.awt.event.WindowEvent evt) {
-                    evt.getWindow().dispose(); // kill window
-                }
-            });
-            currentFigure = root.getFigure(); // set as figure
-            java.awt.EventQueue.invokeLater(() -> {
-                root.setVisible(true);
-            });
+    public static void plot3y(float[] x1data, float[] y1data,
+            float[] x2data, float[] y2data, float[] x3data, float[] y3data) {
+        if (x1data.length != y1data.length) {
+            throw new IllegalArgumentException("Length mismatch");
         }
-        // we might have a currentFigure or just created one - try to get
-        // the currentAxes.
-        currentAxes = currentFigure.getLastAxes();
-        if (!(currentAxes instanceof MYAxes)) {
-            currentAxes = null; // this is an old axes of wrong type.
-            currentFigure.clear();
+        if (x2data.length != y2data.length) {
+            throw new IllegalArgumentException("Length mismatch");
         }
-        if (currentAxes == null) { // if it's not there,
-            currentAxes = new MYAxes(); // create the YYAxes
-            currentFigure.addAxes(currentAxes);
+        if (x3data.length != y3data.length) {
+            throw new IllegalArgumentException("Length mismatch");
         }
+        // This is almost the same as the normal plot command but here we also
+        // need to check if the axes system is of the correct type. Only re-use
+        // a proper MYAxes instead of an axes system.
+        if (currentAxes == null || !(currentAxes instanceof MYAxes)) {
+            if (currentFigure == null) { // is there even an active figure?
+                // if there is no axes known, create one in a new window.
+                FigureJFrame root = new FigureJFrame();
+                root.addWindowListener(new java.awt.event.WindowAdapter() {
+                    @Override
+                    public void windowClosing(java.awt.event.WindowEvent evt) {
+                        evt.getWindow().dispose(); // kill window
+                    }
+                });
+                currentFigure = root.getFigure(); // set as figure
+                java.awt.EventQueue.invokeLater(() -> {
+                    root.setVisible(true);
+                });
+            }
+            // we might have a currentFigure or just created one - try to get
+            // the currentAxes.
+            currentAxes = currentFigure.getLastAxes();
+            if (!(currentAxes instanceof MYAxes)) {
+                currentAxes = null; // this is an old axes of wrong type.
+                currentFigure.clear();
+            }
+            if (currentAxes == null) { // if it's not there,
+                currentAxes = new MYAxes(); // create the YYAxes
+                currentFigure.addAxes(currentAxes);
+            }
+        }
+        MYAxes myAxes = (MYAxes) currentAxes; // get access to MY methods
+        boolean prevHold = myAxes.getHold();
+        if (!prevHold) {
+            myAxes.lines.clear();
+        }
+        myAxes.setHold(true); // hold has to be true while adding lines
+        Line l = new Line();
+        l.setData(x1data, y1data);
+        myAxes.addLine(1, l);
+        l = new Line();
+        l.setData(x2data, y2data);
+        myAxes.addLine(2, l);
+        l = new Line();
+        l.setData(x3data, y3data);
+        myAxes.addLine(3, l);
+        if (!prevHold) {
+            myAxes.autoX();
+            myAxes.autoY();
+        }
+        myAxes.setHold(prevHold);
     }
-    MYAxes myAxes = (MYAxes) currentAxes; // get access to MY methods
-    boolean prevHold = myAxes.getHold();
-    if (!prevHold) {
-        myAxes.lines.clear();
-    }
-    myAxes.setHold(true); // hold has to be true while adding lines
-    Line l = new Line();
-    l.setData(x1data, y1data);
-    myAxes.addLine(1, l);
-    l = new Line();
-    l.setData(x2data, y2data);
-    myAxes.addLine(2, l);
-    l = new Line();
-    l.setData(x3data, y3data);
-    myAxes.addLine(3, l);
-    if (!prevHold) {
-        myAxes.autoX();
-        myAxes.autoY();
-    }
-    myAxes.setHold(prevHold);
-}
 
     /**
      * Adds a description label to the x-axis of the current axes. Using "null"
@@ -421,5 +421,34 @@ public final class VisualizeData {
             root.setVisible(true);
         });
         return fp;
+    }
+
+    /**
+     * Adds a legend to the current figure.
+     *
+     * @param varargin
+     */
+    public static void legend(String... varargin) {
+        if (currentFigure == null) {
+            return;
+        }
+        Axes ax = currentFigure.getLastAxes();
+        // Is there already a legend?
+        Legend leg = currentFigure.getLastLegend();
+        if (leg == null) {
+            // If no legend is present, create one.
+            leg = new Legend();
+        }
+
+        for (int i = 0; i < varargin.length; i++) {
+            Line line = currentAxes.getLine(i + 1); // GetLine counts from 1
+            line.setLabel(varargin[i]);
+            leg.addLine(line);
+        }
+        leg.setLocationInsideAxes(ax);
+        
+        // leg.setPosition(350, 30);
+        currentFigure.addLegend(leg);
+
     }
 }

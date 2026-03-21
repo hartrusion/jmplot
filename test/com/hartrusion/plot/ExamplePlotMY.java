@@ -57,5 +57,8 @@ public class ExamplePlotMY {
         gca().getLine(2).setMarkerInterval(4);
         gca().getLine(3).setMarker('◇');
         gca().getLine(3).setMarkerInterval(2);
+        
+        // Add Some legend
+        legend("Data 1", "More Data", "Third Line");
     }
 }

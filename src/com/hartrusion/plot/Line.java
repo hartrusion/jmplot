@@ -26,6 +26,7 @@ package com.hartrusion.plot;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -73,6 +74,8 @@ public class Line {
     private char marker = '\0';
     private float markerSize = 12.0F;
     private int markerInterval = 1;
+
+    private String label = null;
 
     // 1: Line ends excatly before it overwrites the box lines.
     // 0: Line can be drawn exactly on the box border line
@@ -380,6 +383,20 @@ public class Line {
         return markerInterval;
     }
 
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * Sets a label that describes how this line object is named. Used for
+     * legend objects.
+     *
+     * @param label String to describe the Line
+     */
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
     /**
      * Returns the currently assigned y axis ruler object to which this line
      * refers to.
@@ -452,5 +469,70 @@ public class Line {
                 return;
             }
         }
+    }
+
+    /**
+     * Draws a legend entry for this line at the given coordinates. This draws a
+     * short exemplary line (with marker in the middle if set) and the label
+     * text next to it.
+     *
+     * @param g Graphics object for drawing
+     * @param xCoord X coordinate where the legend sample line starts
+     * @param yCoord Y coordinate (vertical center of the entry)
+     * @param sampleLineLength Length of the exemplary line in pixels
+     */
+    public void drawToLegend(Graphics g,
+            int xCoord, int yCoord,
+            int sampleLineLength) {
+        Graphics2D g2 = (Graphics2D) g;
+        Color previousColor = g.getColor();
+        Stroke previousStroke = g2.getStroke();
+        
+        Font previousFont = g.getFont();
+
+        Color color = (lineColor != null) ? lineColor : Color.BLUE;
+        g.setColor(color);
+        g2.setStroke(lineStroke);
+
+        // Draw the exemplary line from left to right
+        g.drawLine(xCoord, yCoord, xCoord + sampleLineLength, yCoord);
+
+        // Draw marker in the center of the sample line if a marker is set
+        if (marker != '\0') {
+            Font markerFont = new Font(Font.MONOSPACED, Font.PLAIN,
+                    Math.round(markerSize));
+            g.setFont(markerFont);
+
+            String markerStr = String.valueOf(marker);
+            GlyphVector gv = markerFont.createGlyphVector(
+                    g2.getFontRenderContext(), markerStr);
+            Rectangle2D visualBounds = gv.getVisualBounds();
+
+            double offsetX = visualBounds.getX()
+                    + visualBounds.getWidth() / 2.0;
+            double offsetY = visualBounds.getY()
+                    + visualBounds.getHeight() / 2.0;
+
+            int cx = xCoord + sampleLineLength / 2;
+            g.drawString(markerStr,
+                    (int) Math.round(cx - offsetX),
+                    (int) Math.round(yCoord - offsetY) + 1);
+            g.setFont(previousFont);
+        }
+
+        // Draw the label text to the right of the sample line
+        if (label != null && !label.isEmpty()) {
+            // g.setFont(Legend.LEGEND_FONT);
+            g.setColor(Legend.TEXT_COLOR);
+            FontMetrics fm = g.getFontMetrics();
+            int textX = xCoord + sampleLineLength + Legend.TEXT_OFFSET;
+            // Vertically center the text on the yCoord line
+            int textY = yCoord + (fm.getAscent() - fm.getDescent()) / 2;
+            g.drawString(label, textX, textY);
+        }
+
+        // Restore previous state
+        g2.setStroke(previousStroke);
+        g.setColor(previousColor);
     }
 }

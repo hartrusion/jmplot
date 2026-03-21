@@ -39,6 +39,20 @@ public interface Figure {
      * @param a
      */
     public void addAxes(Axes a);
+    
+    /**
+     * Adds a legend object that will be displayed on this Figure. A figure can
+     * display multiple legends (or just one).
+     * 
+     * @param l Legend Object
+     */
+    public void addLegend(Legend l);
+    
+    /**
+     * Returns the last legend that was added to this figure.
+     * @return 
+     */
+    public Legend getLastLegend();
 
     /**
      * Add an instance of a subplot manager to be displayed on this figure. A
@@ -63,7 +77,7 @@ public interface Figure {
     /**
      * Get the last axes that was used inside this Figure.
      *
-     * @return Axes referece.
+     * @return Axes reference.
      */
     public Axes getLastAxes();
 

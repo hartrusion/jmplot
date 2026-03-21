@@ -50,6 +50,11 @@ public class FigureJPane extends JComponent implements Figure {
      * A list containing all axes that are included in this figure panel.
      */
     private final List<Axes> axes = new ArrayList<>();
+    
+    /**
+     * A list containing all legends that are included in this figure panel.
+     */
+    private final List<Legend> legends = new ArrayList<>();
 
     /**
      * Reference to a subplot manager, holding some information about the axes
@@ -190,6 +195,19 @@ public class FigureJPane extends JComponent implements Figure {
         }
         return axes.get(0);
     }
+    
+    @Override
+    public void addLegend(Legend l) {
+        legends.add(l);
+    }
+    
+    @Override
+    public Legend getLastLegend() {
+        if (legends.isEmpty()) {
+            return null;
+        }
+        return legends.get(0);
+    }
 
     @Override
     public void addSubPlot(SubPlot sp) {
@@ -205,6 +223,7 @@ public class FigureJPane extends JComponent implements Figure {
     public void clear() {
         subPlot = null;
         axes.clear();
+        legends.clear();
     }
 
     @Override
@@ -227,6 +246,9 @@ public class FigureJPane extends JComponent implements Figure {
         if (selectionRect != null) {
             g.setColor(new Color(0, 120, 215)); // Z.B. klassisches Explorer Blau
             g.drawRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+        }
+        for (Legend legend : legends) {
+            legend.awtPaintComponents(g);
         }
     }
 

@@ -98,4 +98,14 @@ public class FigurePane extends Panel implements Figure {
             }
         }
     }
+
+    @Override
+    public void addLegend(Legend l) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Legend getLastLegend() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
