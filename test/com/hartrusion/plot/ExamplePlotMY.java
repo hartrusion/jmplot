@@ -26,7 +26,8 @@ package com.hartrusion.plot;
 import static com.hartrusion.plot.VisualizeData.*;
 
 /**
- * Creates a line plot with three data series and separate y axes.
+ * Creates a line plot with three data series and separate y axes. This
+ * generates the image used at the Github repository.
  *
  * @author Viktor Alexander Hartung
  */
@@ -48,5 +49,13 @@ public class ExamplePlotMY {
         ylabel(1, "Primary Y axes");
         ylabel(2, "Secondary Y axes");
         ylabel(3, "Third Y axes");
+
+        // Use gca as GetCurrentAxes to access line objects and set markers
+        gca().getLine(1).setMarker('x');
+        gca().getLine(1).setMarkerInterval(3);
+        gca().getLine(2).setMarker('o');
+        gca().getLine(2).setMarkerInterval(4);
+        gca().getLine(3).setMarker('◇');
+        gca().getLine(3).setMarkerInterval(2);
     }
 }

@@ -25,11 +25,14 @@ package com.hartrusion.plot;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
+import java.awt.font.GlyphVector;
+import java.awt.geom.Rectangle2D;
 
 /**
  * 2D line object to be drawn on a axes object. The line has references to the
@@ -63,6 +66,13 @@ public class Line {
      * values are requested.
      */
     private boolean externalDataSource = false;
+
+    /**
+     * The marker character, e.g. 'o', 'x', '*'. '\0' means no marker.
+     */
+    private char marker = '\0';
+    private float markerSize = 12.0F;
+    private int markerInterval = 1;
 
     // 1: Line ends excatly before it overwrites the box lines.
     // 0: Line can be drawn exactly on the box border line
@@ -99,10 +109,10 @@ public class Line {
             xdata = new float[x.length];
             ydata = new float[y.length];
         }
-        
+
         System.arraycopy(x, 0, xdata, 0, x.length);
         System.arraycopy(y, 0, ydata, 0, y.length);
-        
+
         updateNoXDataProperty();
         if (!noXData) {
             updateXMinProperty();
@@ -111,7 +121,7 @@ public class Line {
             xMin = 0;
             xMax = 0;
         }
-        
+
         updateNoYDataProperty();
         if (!noYData) {
             updateYMinProperty();
@@ -146,7 +156,13 @@ public class Line {
      * @param g Graphics object for drawing.
      */
     public void awtPaintComponents(Graphics g) {
-        setGraphics((Graphics2D) g);
+        Graphics2D g2 = (Graphics2D) g;
+        if (lineColor == null) {
+            lineColor = Color.BLUE; // assign default if its still not done
+        }
+        Color previousColor = g.getColor();
+        g.setColor(lineColor);
+        g2.setStroke(lineStroke);
 
         // Set clipping area to only draw inside the axes box area
         Shape previousClip = g.getClip(); // remember current setting
@@ -177,15 +193,50 @@ public class Line {
                     yaxis.getCoordinateValue(ydata[idx + 1]));
         }
 
-        g.setClip(previousClip); // restore previous clipping area
-    }
+        if (marker != '\0') {
+            Font previousFont = g.getFont();
 
-    private void setGraphics(Graphics2D g2) {
-        if (lineColor == null) {
-            lineColor = Color.BLUE; // assign default if its still not done
+            // Set up marker font and color
+            Font markerFont = new Font(Font.MONOSPACED, Font.PLAIN,
+                    Math.round(markerSize));
+            g.setFont(markerFont);
+
+            // Create a GlyphVector for the marker character once.
+            // getVisualBounds() gives the bounding box of the actual
+            // rendered glyph pixels – this is what makes centering exact.
+            String markerStr = String.valueOf(marker);
+            GlyphVector gv = markerFont.createGlyphVector(
+                    g2.getFontRenderContext(), markerStr);
+            Rectangle2D visualBounds = gv.getVisualBounds();
+
+            // The visual bounds are relative to the baseline origin (0,0).
+            // To center the glyph on a point (px, py), we need to shift:
+            //   drawX = px - (visualBounds.x + visualBounds.width / 2)
+            //   drawY = py - (visualBounds.y + visualBounds.height / 2)
+            // where visualBounds.x/y are typically negative (left of / above baseline).
+            double offsetX = visualBounds.getX()
+                    + visualBounds.getWidth() / 2.0;
+            double offsetY = visualBounds.getY()
+                    + visualBounds.getHeight() / 2.0;
+
+            for (int idx = 0; idx < xdata.length; idx += markerInterval) {
+                if (!Float.isFinite(xdata[idx]) || !Float.isFinite(ydata[idx])) {
+                    continue;
+                }
+                int px = xaxis.getCoordinateValue(xdata[idx]);
+                int py = yaxis.getCoordinateValue(ydata[idx]);
+
+                // Draw the string so that the visual center of the glyph
+                // lands exactly on (px, py).
+                g.drawString(markerStr,
+                        (int) Math.round(px - offsetX),
+                        (int) Math.round(py - offsetY) + 1);
+            }
+            g.setFont(previousFont);
         }
-        g2.setColor(lineColor);
-        g2.setStroke(lineStroke);
+
+        g.setColor(previousColor);
+        g.setClip(previousClip); // restore previous clipping area
     }
 
     /**
@@ -271,21 +322,68 @@ public class Line {
     /**
      * Get the current color for this line object. Can return null if the color
      * is not yet set, which is default for new created line objects.
-     * 
+     *
      * @return Color or null if undefined.
      */
     public Color getLineColor() {
         return lineColor;
     }
-    
+
     public void setLineColor(Color lineColor) {
         this.lineColor = lineColor;
     }
 
     /**
+     * Sets the marker character.
+     *
+     * @param marker Exactly one character, e.g. 'o', 'x', '*', '+'
+     */
+    public void setMarker(char marker) {
+        this.marker = marker;
+    }
+
+    public void setMarkerDisable() {
+        marker = '\0';
+    }
+
+    public char getMarker() {
+        return marker;
+    }
+
+    /**
+     * Sets the font size (in points) used to draw the marker character.
+     *
+     * @param size Font size, e.g. 12.0F
+     */
+    public void setMarkerSize(float size) {
+        this.markerSize = size;
+    }
+
+    public float getMarkerSize() {
+        return markerSize;
+    }
+
+    /**
+     * Sets the interval at which markers are drawn. 1 = every point, 10 = every
+     * 10th point.
+     *
+     * @param interval Must be >= 1
+     */
+    public void setMarkerInterval(int interval) {
+        if (interval < 1) {
+            throw new IllegalArgumentException("Marker interval must be >= 1");
+        }
+        this.markerInterval = interval;
+    }
+
+    public int getMarkerInterval() {
+        return markerInterval;
+    }
+
+    /**
      * Returns the currently assigned y axis ruler object to which this line
      * refers to.
-     * 
+     *
      * @return YAxisRuler
      */
     public YAxisRuler getYAxis() {
@@ -345,7 +443,7 @@ public class Line {
             }
         }
     }
-    
+
     private synchronized void updateNoYDataProperty() {
         noYData = true;
         for (int idx = 0; idx < ydata.length; idx++) {

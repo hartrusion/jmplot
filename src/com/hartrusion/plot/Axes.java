@@ -143,6 +143,26 @@ public class Axes {
     }
 
     /**
+     * Returns the line object with a given line number.
+     *
+     * @param number Line Number (1..n)
+     * @return Line Object
+     */
+    public Line getLine(int number) {
+        return lines.get(number - 1);
+    }
+
+    /**
+     * Returns the line object that is drawn. If there is more than one line
+     * object, use getLine(number) to access lines.
+     *
+     * @return Line Object
+     */
+    public Line getLine() {
+        return lines.get(0);
+    }
+
+    /**
      * Adds a new cursor object to the axes. Used to add more than one cursor
      *
      * @param c Cursor object
