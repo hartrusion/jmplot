@@ -27,6 +27,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.image.BufferedImage;
 import java.beans.BeanProperty;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,7 +51,7 @@ public class FigureJPane extends JComponent implements Figure {
      * A list containing all axes that are included in this figure panel.
      */
     private final List<Axes> axes = new ArrayList<>();
-    
+
     /**
      * A list containing all legends that are included in this figure panel.
      */
@@ -71,6 +72,14 @@ public class FigureJPane extends JComponent implements Figure {
     private Point rightDragStart = null;
 
     private Axes activeAxes = null;
+
+    /**
+     * The background renderer, null when in classic mode.
+     */
+    private PaintThreadManager renderer = null;
+    private boolean threadedRendering = false;
+
+    private boolean forcePaint = false;
 
     public FigureJPane() {
         axes.add(new Axes()); // construct the default axes
@@ -106,8 +115,8 @@ public class FigureJPane extends JComponent implements Figure {
 
                 if (e.getButton() == MouseEvent.BUTTON1) {
                     // Apply the zoom for the selected rectange on mouse release
-                    if (selectionRect != null 
-                            && selectionRect.width > 5 
+                    if (selectionRect != null
+                            && selectionRect.width > 5
                             && selectionRect.height > 5) {
                         activeAxes.applyZoomBox(
                                 selectionRect.x,
@@ -118,6 +127,7 @@ public class FigureJPane extends JComponent implements Figure {
                     }
                     selectionRect = null;
                     leftDragStart = null;
+                    forcePaint = true;
                     repaint();
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
                     // stop dragging
@@ -132,35 +142,37 @@ public class FigureJPane extends JComponent implements Figure {
                 }
 
                 // Linke Taste gedrückt? => Rechteck ziehen
-                if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) 
+                if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK)
                         != 0 && leftDragStart != null) {
                     // Limit the zoom rectange to the axes box so no zoom is 
                     // possible outside the axes object. This might be nice to 
                     // have but feels weird as it is not visible yet what is 
                     // there to zoom into. In such cases, the lines should
                     // be dragged first.
-                    int x1 = Math.max(activeAxes.boxCoordinates[0], 
+                    int x1 = Math.max(activeAxes.boxCoordinates[0],
                             Math.min(leftDragStart.x, e.getX()));
-                    int y1 = Math.max(activeAxes.boxCoordinates[1], 
+                    int y1 = Math.max(activeAxes.boxCoordinates[1],
                             Math.min(leftDragStart.y, e.getY()));
-                    int x2 = Math.min(activeAxes.boxCoordinates[2], 
+                    int x2 = Math.min(activeAxes.boxCoordinates[2],
                             Math.max(leftDragStart.x, e.getX()));
-                    int y2 = Math.min(activeAxes.boxCoordinates[3], 
+                    int y2 = Math.min(activeAxes.boxCoordinates[3],
                             Math.max(leftDragStart.y, e.getY()));
 
                     selectionRect = new Rectangle(x1, y1, x2 - x1, y2 - y1);
+                    forcePaint = true;
                     repaint();
                     return;
                 }
 
                 // Pan with right mouse
-                if ((e.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) != 0 
+                if ((e.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) != 0
                         && rightDragStart != null) {
                     int dx = e.getX() - rightDragStart.x;
                     int dy = e.getY() - rightDragStart.y;
 
                     activeAxes.applyPan(dx, dy);
                     rightDragStart = e.getPoint();
+                    forcePaint = true;
                     repaint();
                 }
             }
@@ -175,12 +187,46 @@ public class FigureJPane extends JComponent implements Figure {
                 // on the rotation direction and apply it to a point zoom.
                 float factor = e.getWheelRotation() < 0 ? 0.8f : 1.25f;
                 targetAxes.applyZoomPoint(e.getX(), e.getY(), factor);
+                forcePaint = true;
                 repaint();
             }
         };
         addMouseListener(ma);
         addMouseMotionListener(ma);
         addMouseWheelListener(ma);
+
+        setThreadedRendering();
+    }
+
+    /**
+     * Enables or threaded off-screen rendering.
+     */
+    public void setThreadedRendering() {
+        renderer = new PaintThreadManager(this);
+    }
+
+    /**
+     * Sets the render interval for the background thread.
+     *
+     * @param ms Interval in ms (e.g. 200 for ~5 FPS)
+     */
+    public void setRenderIntervalMs(int ms) {
+        if (renderer != null) {
+            renderer.setTargetIntervalMs(ms);
+        }
+    }
+
+    /**
+     * Signals that external data has changed and the plot needs re-rendering.
+     * In threaded mode, wakes the render thread. In classic mode, calls
+     * repaint().
+     */
+    public void notifyDataChanged() {
+        if (renderer != null) {
+            renderer.markDirty();
+        } else {
+            repaint();
+        }
     }
 
     @Override
@@ -195,12 +241,12 @@ public class FigureJPane extends JComponent implements Figure {
         }
         return axes.get(0);
     }
-    
+
     @Override
     public void addLegend(Legend l) {
         legends.add(l);
     }
-    
+
     @Override
     public Legend getLastLegend() {
         if (legends.isEmpty()) {
@@ -229,23 +275,50 @@ public class FigureJPane extends JComponent implements Figure {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+
+        if (!forcePaint && threadedRendering && renderer != null) {
+            // THREADED: blit pre-rendered image
+            BufferedImage img = renderer.getPlotImage();
+            if (img != null) {
+                g.drawImage(img, 0, 0, null);
+            }
+        } else {
+            // Direct paint on Event Dispatch Thread
+            ((Graphics2D) g).setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+
+            paintFigureContent((Graphics2D) g,
+                    (float) getWidth() - 1, (float) getHeight() - 1);
+            forcePaint = false;
+        }
+
+        // Selection rectangle is always live calculated on EDT
+        if (selectionRect != null) {
+            g.setColor(new Color(0, 120, 215));
+            g.drawRect(selectionRect.x, selectionRect.y,
+                    selectionRect.width, selectionRect.height);
+        }
+
+    }
+
+    /**
+     * Paints the contents that shall be displayed in this figure into a
+     * graphics object. Either called by the class itself or by an external
+     * renderer that does the rendering.
+     *
+     * @param g
+     */
+    public void paintFigureContent(Graphics2D g, float parentWidth, float parentHeight) {
         for (Axes a : axes) {
-            a.awtPaintComponents(
-                    g, (float) getWidth() - 1, (float) getHeight() - 1);
+            a.awtPaintComponents(g, parentWidth, parentHeight);
         }
         if (subPlot != null) {
             Iterator<Axes> axIterator = subPlot.getAxesIterator();
             while (axIterator.hasNext()) {
                 Axes a = axIterator.next();
-                a.awtPaintComponents(
-                        g, (float) getWidth() - 1, (float) getHeight() - 1);
+                a.awtPaintComponents(g, parentWidth, parentHeight);
             }
-        }
-        if (selectionRect != null) {
-            g.setColor(new Color(0, 120, 215)); // Z.B. klassisches Explorer Blau
-            g.drawRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
         }
         for (Legend legend : legends) {
             legend.awtPaintComponents(g);
