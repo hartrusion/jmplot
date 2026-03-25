@@ -86,14 +86,14 @@ public class FigurePane extends Panel implements Figure {
     public void paint(Graphics g) {
         super.paint(g);
         for (Axes a : axes) {
-            a.awtPaintComponents(
+            a.paintContent(
                     g, (float) getWidth() - 1, (float) getHeight() - 1);
         }
         if (subPlot != null) {
             Iterator<Axes> axIterator = subPlot.getAxesIterator();
             while (axIterator.hasNext()) {
                 Axes a = axIterator.next();
-                a.awtPaintComponents(
+                a.paintContent(
                         g, (float) getWidth() - 1, (float) getHeight() - 1);
             }
         }

@@ -51,7 +51,7 @@ class XAxisRuler extends AxisRuler {
         }
     }
 
-    public void awtPaintComponents(Graphics g) {
+    public void paintContent(Graphics g) {
         setGraphics((Graphics2D) g);
         FontMetrics fm = g.getFontMetrics();
 

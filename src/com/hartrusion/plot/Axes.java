@@ -51,6 +51,13 @@ public class Axes {
      */
     protected final int[] boxCoordinates = new int[4];
 
+    /**
+     * Stores the box coordinates that were used the last time the axes content
+     * was drawn. Used to compare with the current box coordinates so it can be
+     * decided if a redraw is needed, mostly due to resizing the container.
+     */
+    protected final int[] oldBoxCoordinates = new int[4];
+
     private final Box box = new Box(); // there is only ONE box per axes.
 
     protected final XAxisRuler xaxis = new XAxisRuler();
@@ -200,6 +207,17 @@ public class Axes {
     }
 
     /**
+     * Checks if the last painting is still valid - if so, a cached drawing of
+     * the axes can be used instead and the paintContent method can be skipped.
+     *
+     * @return true, if a redraw is needed (changed contents, resized or
+     * whatever)
+     */
+    public boolean paintDeprecated() {
+        return true;
+    }
+
+    /**
      * Paints this axes class and all contained elements into a FigurePanel
      * container. Intended to be called in the paint method from the awt panel
      * object where the axes system is drawn into.
@@ -208,7 +226,7 @@ public class Axes {
      * @param parentWidth pixels, as float value, (float) getWidth() - 1
      * @param parentHeight pixels, as float value, (float) getHeight() - 1
      */
-    public void awtPaintComponents(Graphics g,
+    public void paintContent(Graphics g,
             float parentWidth, float parentHeight) {
         // Recalculate the coordinates where the box and lines shall be drawn.
         // This is done like this to prevent rounding issues and keep the pixel
@@ -248,10 +266,10 @@ public class Axes {
         yaxis.updatePlacement(xaxis);
 
         if (xaxis.isVisible()) {
-            xaxis.awtPaintComponents(g);
+            xaxis.paintContent(g);
         }
         if (yaxis.isVisible()) {
-            yaxis.awtPaintComponents(g);
+            yaxis.paintContent(g);
         }
 
         // Plot all known lines
@@ -259,7 +277,7 @@ public class Axes {
             if (l.getYAxis() != yaxis) {
                 continue; // skip foreign lines (only for extensions of Axes)
             }
-            l.awtPaintComponents(g);
+            l.paintContent(g);
         }
 
         // Draw all cursors
@@ -267,8 +285,11 @@ public class Axes {
             if (c.getYAxis() != yaxis) {
                 continue; // skip cursors not assigned to the y axis of this
             }
-            c.awtPaintComponents(g);
+            c.paintContent(g);
         }
+
+        // Save the used box coordinates for comparison.
+        System.arraycopy(boxCoordinates, 0, oldBoxCoordinates, 0, 4);
     }
 
     public void xLim(float x1, float x2) {

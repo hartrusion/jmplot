@@ -76,7 +76,7 @@ class YAxisRuler extends AxisRuler {
         this.placement = placement;
     }
 
-    public void awtPaintComponents(Graphics g) {
+    public void paintContent(Graphics g) {
         setGraphics((Graphics2D) g);
         FontMetrics fm = g.getFontMetrics();
 

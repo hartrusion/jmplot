@@ -82,7 +82,7 @@ public class Cursor {
      *
      * @param g Graphics object for drawing.
      */
-    public void awtPaintComponents(Graphics g) {
+    public void paintContent(Graphics g) {
         if (!Float.isFinite(x) || !Float.isFinite(y)) {
             return; // nothing to draw if one value is invalid. Acceptable.
         }

@@ -40,6 +40,10 @@ import java.awt.geom.Rectangle2D;
  * axis ruler object from the axes where it is supposed to be drawn into (or
  * onto) and uses the ruler object to calulate the proper positions of the
  * coordinates where the line will be placed.
+ * <p>
+ * The line also holds an array of x and y data, while this array is only a
+ * reference at first, it can either be created here and filled with data or set
+ * to an external data source.
  *
  * @author Viktor Alexander Hartung
  */
@@ -58,6 +62,8 @@ public class Line {
     private AxisRuler yaxis;
 
     private float xMin, xMax, yMin, yMax;
+
+    private boolean drawingDeprecated;
 
     /**
      * To determine whether the class holds the data to plot or if a reference
@@ -152,13 +158,21 @@ public class Line {
         ydata = y;
     }
 
+    public void setDrawingDeprecated() {
+        drawingDeprecated = true;
+    }
+    
+    public boolean isDrawingDeprecated() {
+        return drawingDeprecated;
+    }
+
     /**
      * Paint the line onto an awt panel object. Intended to be called from the
      * axes awtPaintComponents method.
      *
      * @param g Graphics object for drawing.
      */
-    public void awtPaintComponents(Graphics g) {
+    public void paintContent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         if (lineColor == null) {
             lineColor = Color.BLUE; // assign default if its still not done
@@ -240,6 +254,8 @@ public class Line {
 
         g.setColor(previousColor);
         g.setClip(previousClip); // restore previous clipping area
+        
+        drawingDeprecated = false;
     }
 
     /**
@@ -487,7 +503,7 @@ public class Line {
         Graphics2D g2 = (Graphics2D) g;
         Color previousColor = g.getColor();
         Stroke previousStroke = g2.getStroke();
-        
+
         Font previousFont = g.getFont();
 
         Color color = (lineColor != null) ? lineColor : Color.BLUE;

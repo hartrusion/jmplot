@@ -174,11 +174,11 @@ public class MYAxes extends YYAxes {
     }
 
     @Override
-    public void awtPaintComponents(Graphics g,
+    public void paintContent(Graphics g,
             float parentWidth, float parentHeight) {
         setSuperPosition(); // Manipulate the box coordinates first,
         // and paint all the super stuff afterwards.
-        super.awtPaintComponents(g, parentWidth, parentHeight);
+        super.paintContent(g, parentWidth, parentHeight);
         // Prepare the additional Y axes by supplying the coordinates.
         for (int idx = 0; idx < myaxes.size(); idx++) {
             // This has to be known to get the correct scaling of the lines
@@ -190,7 +190,7 @@ public class MYAxes extends YYAxes {
             myaxes.get(idx).setPlacement(xaxis.getCoordinateLineStart()
                     - (int) (parentWidth * (addYSpacing * (float) (idx + 1))));
             if (myaxes.get(idx).isVisible()) {
-                myaxes.get(idx).awtPaintComponents(g);
+                myaxes.get(idx).paintContent(g);
             }
         }
         // Plot all lines assigned to the additional axes
@@ -198,7 +198,7 @@ public class MYAxes extends YYAxes {
             if (!myaxes.contains(l.getYAxis())) {
                 continue; // skip lines from other axes
             }
-            l.awtPaintComponents(g);
+            l.paintContent(g);
         }
     }
 

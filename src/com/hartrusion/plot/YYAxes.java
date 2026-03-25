@@ -122,16 +122,16 @@ public class YYAxes extends Axes {
     }
 
     @Override
-    public void awtPaintComponents(Graphics g,
+    public void paintContent(Graphics g,
             float parentWidth, float parentHeight) {
-        super.awtPaintComponents(g, parentWidth, parentHeight);
+        super.paintContent(g, parentWidth, parentHeight);
 
         // Paint the additional axes afterward. Lines were already drawn in
         // the super call.
         secondaryYaxis.setCoordinates(boxCoordinates[3], boxCoordinates[1]);
         secondaryYaxis.updatePlacement(xaxis);
         if (secondaryYaxis.isVisible()) {
-            secondaryYaxis.awtPaintComponents(g);
+            secondaryYaxis.paintContent(g);
         }
 
         // Plot lines assigned to the secondary y axes
@@ -139,7 +139,7 @@ public class YYAxes extends Axes {
             if (l.getYAxis() != secondaryYaxis) {
                 continue; // skip foreign lines (only for extensions of Axes)
             }
-            l.awtPaintComponents(g);
+            l.paintContent(g);
         }
     }
 

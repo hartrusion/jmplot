@@ -307,21 +307,22 @@ public class FigureJPane extends JComponent implements Figure {
      * graphics object. Either called by the class itself or by an external
      * renderer that does the rendering.
      *
-     * @param g
+     * @param g2 Graphics2D context to paint into
      */
-    public void paintFigureContent(Graphics2D g, float parentWidth, float parentHeight) {
+    public void paintFigureContent(Graphics2D g2, 
+            float parentWidth, float parentHeight) {
         for (Axes a : axes) {
-            a.awtPaintComponents(g, parentWidth, parentHeight);
+            a.paintContent(g2, parentWidth, parentHeight);
         }
         if (subPlot != null) {
             Iterator<Axes> axIterator = subPlot.getAxesIterator();
             while (axIterator.hasNext()) {
                 Axes a = axIterator.next();
-                a.awtPaintComponents(g, parentWidth, parentHeight);
+                a.paintContent(g2, parentWidth, parentHeight);
             }
         }
         for (Legend legend : legends) {
-            legend.awtPaintComponents(g);
+            legend.awtPaintComponents(g2);
         }
     }
 
