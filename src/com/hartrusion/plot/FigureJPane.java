@@ -195,38 +195,71 @@ public class FigureJPane extends JComponent implements Figure {
         addMouseMotionListener(ma);
         addMouseWheelListener(ma);
 
-        setThreadedRendering();
-    }
-
-    /**
-     * Enables or threaded off-screen rendering.
-     */
-    public void setThreadedRendering() {
+        // Generate a render instance for not having the EDT calculate the whole
+        // line plot.
         renderer = new PaintThreadManager(this);
     }
 
     /**
-     * Sets the render interval for the background thread.
-     *
-     * @param ms Interval in ms (e.g. 200 for ~5 FPS)
-     */
-    public void setRenderIntervalMs(int ms) {
-        if (renderer != null) {
-            renderer.setTargetIntervalMs(ms);
-        }
-    }
-
-    /**
      * Signals that external data has changed and the plot needs re-rendering.
-     * In threaded mode, wakes the render thread. In classic mode, calls
+     * In threaded mode, submits a render task. In classic mode, calls
      * repaint().
      */
     public void notifyDataChanged() {
         if (renderer != null) {
-            renderer.markDirty();
+            renderer.requestRender();
         } else {
             repaint();
         }
+    }
+
+    /**
+     * Checks if the current drawing (BufferedImage) is deprecated and needs to
+     * be regenerated. This queries all contained axes and their lines.
+     * <p>
+     * Reasons for deprecation:
+     * <ul>
+     * <li>No plotImage exists yet (first paint)</li>
+     * <li>Component was resized (image dimensions don't match)</li>
+     * <li>Any Axes reports paintDeprecated()</li>
+     * <li>Any Line reports isDrawingDeprecated()</li>
+     * </ul>
+     *F
+     * @return true if the cached image is stale and must be re-rendered.
+     */
+    public boolean isDrawingDeprecated() {
+        // No image yet → deprecated
+        if (renderer == null) {
+            return true;
+        }
+        BufferedImage img = renderer.getPlotImage();
+        if (img == null) {
+            return true;
+        }
+
+        // Size changed → deprecated
+        if (!renderer.isSizeMatching()) {
+            return true;
+        }
+
+        // Ask all axes
+        for (Axes a : axes) {
+            if (a.isDrawingDeprecated()) {
+                return true;
+            }
+        }
+
+        // Ask all subplot axes
+        if (subPlot != null) {
+            Iterator<Axes> it = subPlot.getAxesIterator();
+            while (it.hasNext()) {
+                if (it.next().isDrawingDeprecated()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -272,34 +305,78 @@ public class FigureJPane extends JComponent implements Figure {
         legends.clear();
     }
 
+    /**
+     * The core of the off-EDT rendering strategy.
+     * <p>
+     * Flow:
+     * <ol>
+     * <li>If forcePaint is set (interactive drag/zoom/pan), draw directly on
+     * the EDT for immediate feedback.</li>
+     * <li>If a valid (non-deprecated) BufferedImage exists, use it. This is
+     * extremely fast (just a drawImage call).</li>
+     * <li>If no valid image exists (deprecated or first paint), submit a render
+     * task to the background executor and return immediately. The EDT is NOT
+     * blocked. The render thread will call repaint() when done, triggering
+     * another paintComponent where step 2 will succeed.</li>
+     * </ol>
+     * The selection rectangle is always drawn live on the EDT on top.
+     */
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        if (!forcePaint && threadedRendering && renderer != null) {
-            // THREADED: blit pre-rendered image
+        // --- CASE 1: Interactive action needs immediate EDT rendering ---
+        // When dragging the selection rectangle or panning, we need instant
+        // visual feedback, so we paint directly and bypass the buffered image.
+        if (forcePaint) {
+            ((Graphics2D) g).setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            paintFigureContent((Graphics2D) g,
+                    (float) getWidth() - 1, (float) getHeight() - 1);
+            forcePaint = false;
+
+            // After a direct paint (zoom/pan changed data), the buffered
+            // image is now stale → submit a fresh render for subsequent
+            // non-interactive repaints.
+            if (renderer != null) {
+                renderer.requestRender();
+            }
+
+            // --- CASE 2: Threaded rendering with valid image → just blit ---
+        } else if (renderer != null && !isDrawingDeprecated()) {
             BufferedImage img = renderer.getPlotImage();
             if (img != null) {
                 g.drawImage(img, 0, 0, null);
             }
+
+            // --- CASE 3: No valid image → kick off background render, return ---
+        } else if (renderer != null) {
+            // Draw the old image if available (better than blank screen)
+            BufferedImage oldImg = renderer.getPlotImage();
+            if (oldImg != null) {
+                g.drawImage(oldImg, 0, 0, null);
+            }
+            // Submit render task. The thread will build the image and
+            // call repaint() when done → next paintComponent hits CASE 2.
+            renderer.requestRender();
+
+            // --- CASE 4: No renderer (classic mode) → direct paint ---
         } else {
-            // Direct paint on Event Dispatch Thread
             ((Graphics2D) g).setRenderingHint(
                     RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
-
             paintFigureContent((Graphics2D) g,
                     (float) getWidth() - 1, (float) getHeight() - 1);
-            forcePaint = false;
         }
 
-        // Selection rectangle is always live calculated on EDT
+        // Selection rectangle is always drawn live on the EDT for better
+        // visuals sticking on the mouse.
         if (selectionRect != null) {
             g.setColor(new Color(0, 120, 215));
             g.drawRect(selectionRect.x, selectionRect.y,
                     selectionRect.width, selectionRect.height);
         }
-
     }
 
     /**
@@ -309,7 +386,7 @@ public class FigureJPane extends JComponent implements Figure {
      *
      * @param g2 Graphics2D context to paint into
      */
-    public void paintFigureContent(Graphics2D g2, 
+    public void paintFigureContent(Graphics2D g2,
             float parentWidth, float parentHeight) {
         for (Axes a : axes) {
             a.paintContent(g2, parentWidth, parentHeight);

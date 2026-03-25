@@ -207,14 +207,25 @@ public class Axes {
     }
 
     /**
-     * Checks if the last painting is still valid - if so, a cached drawing of
-     * the axes can be used instead and the paintContent method can be skipped.
+     * Checks if the drawing of this axes or any of its contained elements
+     * (lines, cursors) is deprecated and needs to be redrawn. This can be: Box
+     * coordinates changed (component resized) or any line reports
+     * isDrawingDeprecated().
      *
-     * @return true, if a redraw is needed (changed contents, resized or
-     * whatever)
+     * @return true if a redraw is needed
      */
-    public boolean paintDeprecated() {
-        return true;
+    public boolean isDrawingDeprecated() {
+        // Check if box coordinates changed (resize)
+        if (!java.util.Arrays.equals(boxCoordinates, oldBoxCoordinates)) {
+            return true;
+        }
+        // Check all lines
+        for (Line l : lines) {
+            if (l.isDrawingDeprecated()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

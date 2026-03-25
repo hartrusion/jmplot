@@ -26,6 +26,9 @@ package com.hartrusion.plot;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Generates and manages a separate thread that generates the image that is to
@@ -39,95 +42,101 @@ import java.awt.image.BufferedImage;
  * @author Viktor Alexander Hartung
  */
 public class PaintThreadManager {
-
     private final FigureJPane figure;
+
+    /**
+     * The pre-rendered plot image. Written by the render thread, read by the
+     * EDT. Volatile ensures visibility without locking.
+     */
     private volatile BufferedImage plotImage = null;
-    private volatile boolean dirty = true;
-    private volatile boolean running = false;
-    private volatile int targetIntervalMs = 200;
-    private int lastWidth = -1;
-    private int lastHeight = -1;
-    private Thread thread;
+
+    /**
+     * Guards against submitting multiple render tasks concurrently.
+     * true = a render task is currently queued or executing.
+     */
+    private final AtomicBoolean rendering = new AtomicBoolean(false);
+
+    /**
+     * Single-thread executor – one thread is kept alive and ready in the pool.
+     * When a render task is submitted it executes immediately (no thread
+     * creation delay). When idle, the thread simply waits (no CPU usage,
+     * no polling). Uses a daemon thread so it won't prevent JVM shutdown.
+     */
+    private final ExecutorService executor;
+
+    /**
+     * Dimensions of the last rendered image, used to detect resize.
+     */
+    private volatile int lastWidth = -1;
+    private volatile int lastHeight = -1;
 
     PaintThreadManager(FigureJPane owner) {
         this.figure = owner;
-
-        // Start thread on construction of this object
-        running = true;
-        dirty = true;
-        thread = new Thread(this::renderLoop,
-                "jmplot-renderer-"
-                + Integer.toHexString(
-                        System.identityHashCode(figure)));
-        thread.setDaemon(true);
-        thread.start();
+        // A single-thread executor with a daemon thread factory.
+        // The thread sits idle when no task is submitted (zero CPU).
+        // When a task is submitted, it starts immediately.
+        this.executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r,
+                    "jmplot-renderer-"
+                    + Integer.toHexString(
+                            System.identityHashCode(figure)));
+            t.setDaemon(true);
+            return t;
+        });
     }
 
+    /**
+     * Returns the last rendered image, or null if none exists yet.
+     */
     BufferedImage getPlotImage() {
         return plotImage;
     }
 
-    public void markDirty() {
-        dirty = true;
-        Thread t = thread;
-        if (t != null) {
-            t.interrupt();
-        }
-    }
-
-    public void setTargetIntervalMs(int ms) {
-        if (ms < 1) {
-            throw new IllegalArgumentException("Interval must be >= 1");
-        }
-        targetIntervalMs = ms;
-    }
-
-    public void stop() {
-        running = false;
-        Thread t = thread;
-        if (t != null) {
-            t.interrupt();
-            try {
-                t.join(targetIntervalMs * 2L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        thread = null;
-    }
-
     /**
-     * The render loop. Runs on the dedicated render thread. This is a private
-     * method, not an overridden Runnable.run().
+     * Submits a render task if none is currently running. Called from
+     * paintComponent on the EDT when isDrawingDeprecated() is true or
+     * no plotImage exists. Returns immediately – the EDT is not blocked.
+     * <p>
+     * If a render task is already in progress, this call is a no-op
+     * (the running task will produce a fresh image anyway).
      */
-    private void renderLoop() {
-        while (running) {
-            try {
-                int w = figure.getWidth();
-                int h = figure.getHeight();
-                boolean resized
-                        = (w != lastWidth || h != lastHeight);
-
-                if ((dirty || resized) && w > 0 && h > 0) {
-                    renderFrame(w, h);
-                    lastWidth = w;
-                    lastHeight = h;
-                    dirty = false;
-                    figure.repaint();
-                }
-                Thread.sleep(targetIntervalMs);
-            } catch (InterruptedException e) {
-                // markDirty() woke us up – loop back
-            } catch (Exception e) {
-                System.err.println(
-                        "PlotRenderer: " + e.getMessage());
-            }
+    public void requestRender() {
+        if (rendering.compareAndSet(false, true)) {
+            executor.submit(this::renderTask);
         }
     }
 
     /**
-     * Renders one complete frame into a new BufferedImage. No locking is
-     * performed – see class Javadoc for the rationale.
+     * The actual render work. Runs on the executor thread (off-EDT).
+     * Builds a new BufferedImage, paints the figure content into it,
+     * then triggers repaint() so the EDT picks up the new image.
+     */
+    private void renderTask() {
+        try {
+            int w = figure.getWidth();
+            int h = figure.getHeight();
+
+            if (w <= 0 || h <= 0) {
+                return; // component not yet laid out
+            }
+
+            renderFrame(w, h);
+            lastWidth = w;
+            lastHeight = h;
+
+            // Trigger a repaint on the EDT so the new image gets displayed.
+            // This is a lightweight call – it just schedules a paint event.
+            figure.repaint();
+        } catch (Exception e) {
+            System.err.println("PlotRenderer: " + e.getMessage());
+        } finally {
+            // Allow the next render request to be submitted
+            rendering.set(false);
+        }
+    }
+
+    /**
+     * Renders one complete frame into a new BufferedImage.
      */
     private void renderFrame(int w, int h) {
         BufferedImage img = new BufferedImage(w, h,
@@ -150,6 +159,15 @@ public class PaintThreadManager {
         figure.paintFigureContent(g2, pw, ph);
 
         g2.dispose();
-        plotImage = img;  // volatile write → sofort sichtbar für EDT
+        plotImage = img;  // volatile write → immediately visible to EDT
+    }
+
+    /**
+     * Checks if the current image dimensions match the figure size.
+     * Used by FigureJPane to detect resize as a deprecation reason.
+     */
+    boolean isSizeMatching() {
+        return lastWidth == figure.getWidth()
+                && lastHeight == figure.getHeight();
     }
 }
