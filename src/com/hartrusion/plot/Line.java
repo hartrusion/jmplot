@@ -436,7 +436,7 @@ public class Line {
 
     private synchronized void updateXMaxProperty() {
         boolean xDataFinite;
-        xMax = Float.MIN_VALUE;
+        xMax = Float.NEGATIVE_INFINITY;
         for (int idx = 0; idx < xdata.length; idx++) {
             xDataFinite = Double.isFinite(xdata[idx]);
             if (xdata[idx] > xMax && xDataFinite) {
