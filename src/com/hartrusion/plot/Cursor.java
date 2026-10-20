@@ -36,13 +36,10 @@ import java.awt.Shape;
  *
  * @author Viktor Alexander Hartung
  */
-public class Cursor {
+public class Cursor extends CoordinateObject {
 
     private float x;
     private float y;
-
-    private AxisRuler xaxis;
-    private AxisRuler yaxis;
 
     // 1: Cursor draw ends excatly before it overwrites the box lines.
     // 0: Cursor draw can be drawn exactly on the box border line
@@ -53,17 +50,6 @@ public class Cursor {
      * Width of the crosshair styled cursor
      */
     private static final int CROSSHAIR_WIDTH = 8;
-
-    /**
-     * Called from the axes object when adding the cursor to the axes. Creates a
-     * link between axes and the cursor by making the rulers known to the
-     * instance.
-     */
-    @SuppressWarnings("NonPublicExported")
-    public void initComponent(AxisRuler xaxis, AxisRuler yaxis) {
-        this.xaxis = xaxis;
-        this.yaxis = yaxis;
-    }
 
     /**
      * Sets the position where this cursor is to be displayed.

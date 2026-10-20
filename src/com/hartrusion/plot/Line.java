@@ -47,7 +47,7 @@ import java.awt.geom.Rectangle2D;
  *
  * @author Viktor Alexander Hartung
  */
-public class Line {
+public class Line extends CoordinateObject {
 
     private float[] xdata;
     private float[] ydata;
@@ -57,9 +57,6 @@ public class Line {
 
     private Color lineColor = null;
     private Stroke lineStroke = new BasicStroke(1F);
-
-    private AxisRuler xaxis;
-    private AxisRuler yaxis;
 
     private float xMin, xMax, yMin, yMax;
 
@@ -87,16 +84,6 @@ public class Line {
     // 0: Line can be drawn exactly on the box border line
     // -1: Line will be drawn 1 px over the box border line.
     private static int BOX_PADDING = 0;
-
-    /**
-     * Called from the axes object when adding the line to the axes. Creates the
-     * link between axes and the line by making the rulers known to the line.
-     */
-    @SuppressWarnings("NonPublicExported")
-    public void initComponent(AxisRuler xaxis, AxisRuler yaxis) {
-        this.xaxis = xaxis;
-        this.yaxis = yaxis;
-    }
 
     /**
      * Copies data to plot into the line object. Note that this will not set a
