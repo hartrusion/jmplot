@@ -23,8 +23,11 @@
  */
 package com.hartrusion.plot;
 
+import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 
 /**
  * Represents a text string drawn onto an Axes object with given x and y
@@ -35,6 +38,9 @@ import java.awt.Graphics2D;
  * The x and y coordinates describe the horizontal left side and vertical center
  * of the drawn text object. Setting a rotation will rotate the text around that
  * point.
+ * <p>
+ * AI transparency note: paintContent is completely vibe coded using Claude 
+ * Opus 5.5
  *
  * @author Viktor Alexander Hartung
  */
@@ -58,14 +64,45 @@ public class Text extends CoordinateObject {
         this.y = y;
     }
     
-        /**
-     * Paint the line onto an awt panel object. Intended to be called from the
+    /**
+     * Paint the text onto an awt panel object. Intended to be called from the
      * axes awtPaintComponents method.
      *
      * @param g Graphics object for drawing.
      */
     public void paintContent(Graphics g) {
+        if (text == null || text.isEmpty()) {
+            return;
+        }
+        if (!Float.isFinite(x) || !Float.isFinite(y)) {
+            return; // nothing to draw if one value is invalid. Acceptable.
+        }
         Graphics2D g2 = (Graphics2D) g;
-        // Todo...
+        // Same appearance as the axis labels: default font, black color.
+        g2.setColor(Color.BLACK);
+        FontMetrics fm = g2.getFontMetrics();
+
+        int xPosition = xaxis.getCoordinateValue(x);
+        int yPosition = yaxis.getCoordinateValue(y);
+        // drawString uses the baseline as y coordinate, shift it down so the
+        // given y coordinate is the vertical center of the text.
+        int yBaseline = yPosition + (fm.getAscent() - fm.getDescent()) / 2;
+
+        if (rotation == 0.0) {
+            g2.drawString(text, xPosition, yBaseline);
+            return;
+        }
+
+        // Rotate coordinate system around the anchor point but keep parent
+        // transformation which shifted the coordinates already in parent
+        // element. Rotation is given counterclockwise in degrees, as the
+        // y direction of the screen is pointing down, the sign is reversed.
+        AffineTransform previousTransform = g2.getTransform();
+        AffineTransform withRot = new AffineTransform(previousTransform);
+        withRot.concatenate(AffineTransform.getRotateInstance(
+                -Math.toRadians(rotation), xPosition, yPosition));
+        g2.setTransform(withRot);
+        g2.drawString(text, xPosition, yBaseline);
+        g2.setTransform(previousTransform); // undo transform
     }
 }
