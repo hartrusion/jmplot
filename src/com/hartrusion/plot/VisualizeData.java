@@ -446,9 +446,23 @@ public final class VisualizeData {
             leg.addLine(line);
         }
         leg.setLocationInsideAxes(ax);
-        
+
         // leg.setPosition(350, 30);
         currentFigure.addLegend(leg);
 
+    }
+
+    public static void text(float x, float y, String text) {
+        if (currentAxes == null) {
+            return;
+        }
+        Text t = new Text();
+        t.setText(text);
+        t.setCoordinates(x, y);
+        currentAxes.addText(t);
+    }
+    
+    public static void text(double x, double y, String text) {
+        text((float) x, (float) y, text);
     }
 }

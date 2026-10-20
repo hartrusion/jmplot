@@ -23,6 +23,9 @@
  */
 package com.hartrusion.plot;
 
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+
 /**
  * Represents a text string drawn onto an Axes object with given x and y
  * coordinates from the axes rulers. It is supposed to be used as an annotation
@@ -39,4 +42,30 @@ public class Text extends CoordinateObject {
 
     private double rotation;
     private String text;
+    
+    private float x, y;
+
+    public void setRotation(double rotation) {
+        this.rotation = rotation;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+    
+    public void setCoordinates(float x, float y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+        /**
+     * Paint the line onto an awt panel object. Intended to be called from the
+     * axes awtPaintComponents method.
+     *
+     * @param g Graphics object for drawing.
+     */
+    public void paintContent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        // Todo...
+    }
 }

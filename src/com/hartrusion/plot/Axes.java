@@ -72,6 +72,11 @@ public class Axes {
      * Holds references to all cursor objects which will be drawn into this axes
      */
     protected final List<Cursor> cursors = new ArrayList<>();
+    
+    /**
+     * Holds references to all text objects that are drawn into this axes.
+     */
+    protected final List<Text> texts = new ArrayList<>();
 
     /**
      * When hold is off, adding a new line will replace the old line plot.
@@ -96,6 +101,7 @@ public class Axes {
         if (!hold) {
             lines.clear();
             cursors.clear();
+            texts.clear();
         }
         lines.add(l);
         // Auto-Assign line colors when adding if no line color is defined yet
@@ -147,6 +153,19 @@ public class Axes {
                 }
             }
         }
+    }
+    
+    /**
+     * Adds a text object to be drawn on this axes.
+     * 
+     * @param t Text object to draw
+     */
+    public void addText(Text t) {
+        if (texts.contains(t)) {
+            return;
+        }
+        texts.add(t);
+        t.initComponent(xaxis, yaxis);
     }
 
     /**
@@ -297,6 +316,14 @@ public class Axes {
                 continue; // skip cursors not assigned to the y axis of this
             }
             c.paintContent(g);
+        }
+        
+        // Draw all text objects
+        for (Text t : texts) {
+            if (t.getYAxis() != yaxis) {
+                continue; // skip cursors not assigned to the y axis of this
+            }
+            t.paintContent(g);
         }
 
         // Save the used box coordinates for comparison.

@@ -400,16 +400,6 @@ public class Line extends CoordinateObject {
         this.label = label;
     }
 
-    /**
-     * Returns the currently assigned y axis ruler object to which this line
-     * refers to.
-     *
-     * @return YAxisRuler
-     */
-    public YAxisRuler getYAxis() {
-        return (YAxisRuler) yaxis;
-    }
-
     private synchronized void updateXMinProperty() {
         boolean xDataFinite;
         xMin = Float.MAX_VALUE;

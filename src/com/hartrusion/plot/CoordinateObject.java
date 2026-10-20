@@ -44,4 +44,14 @@ public abstract class CoordinateObject {
         this.xaxis = xaxis;
         this.yaxis = yaxis;
     }
+    
+    /**
+     * Returns the currently assigned y axis ruler object to which this object
+     * refers to.
+     * 
+     * @return YAxisRuler
+     */
+    public YAxisRuler getYAxis() {
+        return (YAxisRuler) yaxis;
+    }
 }

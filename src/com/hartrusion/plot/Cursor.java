@@ -126,14 +126,4 @@ public class Cursor extends CoordinateObject {
         
         g.setClip(previousClip); // restore previous clipping area
     }
-    
-    /**
-     * Returns the currently assigned y axis ruler object to which this line
-     * refers to.
-     * 
-     * @return YAxisRuler
-     */
-    public YAxisRuler getYAxis() {
-        return (YAxisRuler) yaxis;
-    }
 }
