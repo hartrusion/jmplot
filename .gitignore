@@ -20,3 +20,7 @@
 # Operating system
 .DS_Store
 Thumbs.db
+
+# Vibe coding
+/CLAUDE.md
+/STYLE.md
