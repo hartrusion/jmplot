@@ -23,6 +23,8 @@
  */
 package com.hartrusion.plot;
 
+import java.awt.Color;
+
 /**
  * Describes the methods to handle axes objects inside an element. This is
  * implemented by objects that are the parent objects of the axes object,
@@ -31,6 +33,103 @@ package com.hartrusion.plot;
  * @author Viktor Alexander Hartung
  */
 public interface Figure {
+
+    /**
+     * Background color which is applied by setThemeLight if the current
+     * background is too dark for the light theme. This is the dark gray
+     * #808080 of the classic 16 color palette.
+     */
+    public static final Color THEME_LIGHT_BACKGROUND_COLOR
+            = new Color(0x80, 0x80, 0x80);
+
+    /**
+     * Background color which is applied by setThemeDark if the current
+     * background is too bright for the dark theme. This is the gray #444444
+     * (color 238) of the 256 color palette.
+     */
+    public static final Color THEME_DARK_BACKGROUND_COLOR
+            = new Color(0x44, 0x44, 0x44);
+
+    /**
+     * Perceived brightness on a scale from 0 to 255 below which a background
+     * color is considered to be dark. The gray #808080 has exactly this value
+     * and therefore counts as a light background.
+     */
+    public static final int DARK_BACKGROUND_BRIGHTNESS_LIMIT = 128;
+
+    /**
+     * Returns the background color of the figure. This method is already
+     * implemented by java.awt.Component, which all figure implementations
+     * extend, and is declared here so that the theme methods can use it.
+     *
+     * @return Background color, can be null if none is set or inherited.
+     */
+    public Color getBackground();
+
+    /**
+     * Sets the background color of the figure. This method is already
+     * implemented by java.awt.Component, which all figure implementations
+     * extend, and is declared here so that the theme methods can use it.
+     *
+     * @param c Background color
+     */
+    public void setBackground(Color c);
+
+    /**
+     * Adapts the figure background to the dark theme. Since the background is
+     * usually provided by the swing look and feel, it is only replaced by
+     * THEME_DARK_BACKGROUND_COLOR if it is not already dark or if no
+     * background is set at all, so that a dark look and feel keeps its own
+     * background. The axes inside the figure are not affected and have to be
+     * themed separately.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public default void setThemeDark() {
+        Color background = getBackground();
+        if (background == null || !isColorDark(background)) {
+            setBackground(THEME_DARK_BACKGROUND_COLOR);
+        }
+    }
+
+    /**
+     * Adapts the figure background to the light theme. The background is only
+     * replaced by THEME_LIGHT_BACKGROUND_COLOR if it is currently dark or if
+     * no background is set at all, so that a light look and feel keeps its
+     * own background. The axes inside the figure are not affected and have to
+     * be themed separately.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public default void setThemeLight() {
+        Color background = getBackground();
+        if (background == null || isColorDark(background)) {
+            setBackground(THEME_LIGHT_BACKGROUND_COLOR);
+        }
+    }
+
+    /**
+     * Checks whether a color is dark by calculating its perceived brightness
+     * with the weighting of the ITU-R BT.601 luma, which accounts for the
+     * different sensitivity of the eye to red, green and blue, and comparing
+     * it with DARK_BACKGROUND_BRIGHTNESS_LIMIT.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     *
+     * @param c Color to check, must not be null.
+     * @return true if the color is dark.
+     */
+    private static boolean isColorDark(Color c) {
+        // Integer weights in per mille avoid float rounding, which would
+        // otherwise let the gray #808080 fall slightly below the limit.
+        int brightness = (299 * c.getRed()
+                + 587 * c.getGreen()
+                + 114 * c.getBlue()) / 1000;
+        return brightness < DARK_BACKGROUND_BRIGHTNESS_LIMIT;
+    }
 
     /**
      * Adds a new axes to this FigurePanel. A figure can display multiple axes
