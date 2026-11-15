@@ -325,6 +325,18 @@ public class FigureJPane extends JComponent implements Figure {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // A JComponent without UI delegate never paints its own background,
+        // so an explicitly set background (for example by setThemeDark) is
+        // filled here. Without an explicit background, the component stays
+        // transparent and shows the background of its parent container. The
+        // threaded rendering image is transparent outside of the axes, so
+        // this fill is visible in all of the following cases.
+        // LLM code generated with Claude Opus 5.5
+        if (isBackgroundSet()) {
+            g.setColor(getBackground());
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
         // --- CASE 1: Interactive action needs immediate EDT rendering ---
         // When dragging the selection rectangle or panning, we need instant
         // visual feedback, so we paint directly and bypass the buffered image.
