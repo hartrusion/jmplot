@@ -23,10 +23,7 @@
  */
 package com.hartrusion.plot;
 
-import static com.hartrusion.plot.VisualizeData.plot;
-import static com.hartrusion.plot.VisualizeData.theme;
-import static com.hartrusion.plot.VisualizeData.xlabel;
-import static com.hartrusion.plot.VisualizeData.ylabel;
+import static com.hartrusion.plot.VisualizeData.*;
 
 /**
  * Creates a simple XY line plot and applies the dark theme to its axes so that
@@ -52,5 +49,8 @@ public class ExampleTheme {
         xlabel("X label");
         ylabel("Y label");
         theme("dark");
+        
+        Figure figure = gcf();
+        figure = figure;
     }
 }
