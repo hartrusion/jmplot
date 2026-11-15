@@ -24,3 +24,7 @@ Thumbs.db
 # Vibe coding
 /CLAUDE.md
 /STYLE.md
+# LLM documentation and probe scripts (kept locally only)
+/LLM-GLOSSARY.md
+/LLM-HISTORY.md
+/probes
