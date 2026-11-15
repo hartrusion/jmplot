@@ -49,8 +49,5 @@ public class ExampleTheme {
         xlabel("X label");
         ylabel("Y label");
         theme("dark");
-        
-        Figure figure = gcf();
-        figure = figure;
     }
 }

@@ -461,19 +461,16 @@ public final class VisualizeData {
         t.setCoordinates(x, y);
         currentAxes.addText(t);
     }
-    
+
     public static void text(double x, double y, String text) {
         text((float) x, (float) y, text);
     }
-    
+
     /**
      * Applies a color theme to the current axes. Has to be used as
      * theme("dark") or theme("light"), similar to the hold command. The dark
      * theme draws a black box background with light gray axis rulers, whereas
-     * the light theme restores the default colors. The figure itself is not
-     * themed because its background is usually provided by the swing look and
-     * feel.
-     *
+     * the light theme restores the default colors.
      * <p>
      * LLM code generated with Claude Opus 5.5
      *
@@ -487,6 +484,14 @@ public final class VisualizeData {
             currentAxes.setThemeDark();
         } else if (theme.equals("light")) {
             currentAxes.setThemeLight();
+        }
+        if (currentFigure == null) {
+            return;
+        }
+        if (theme.equals("dark")) {
+            currentFigure.setThemeDark();
+        } else if (theme.equals("light")) {
+            currentFigure.setThemeLight();
         }
     }
 }
