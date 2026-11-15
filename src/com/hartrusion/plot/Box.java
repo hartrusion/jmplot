@@ -35,10 +35,10 @@ import java.awt.Graphics2D;
  */
 class Box extends AxisElementProperties {
 
-    private Color lineColor = Color.LIGHT_GRAY;
+    private Color lineColor = Axes.THEME_LIGHT_BOX_LINE_COLOR;
 
     Box() {
-        color = Color.WHITE;
+        color = Axes.THEME_LIGHT_BOX_BACKGROUND_COLOR;
         stroke = new BasicStroke(1F);
     }
 

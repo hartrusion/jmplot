@@ -24,7 +24,6 @@
 package com.hartrusion.plot;
 
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -102,7 +101,7 @@ abstract class AxisRuler extends AxisElementProperties {
     protected String label;
 
     AxisRuler() {
-        color = Color.BLACK;
+        color = Axes.THEME_LIGHT_AXIS_RULER_COLOR;
         stroke = new BasicStroke(1F);
 
         // Construct the default axis from 0 to 10. This is moved here

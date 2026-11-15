@@ -9,12 +9,19 @@ import java.awt.Graphics;
  */
 public class YYAxes extends Axes {
 
+    /**
+     * Color of the primary (left) y axis ruler, which matches the default
+     * color of the first line so that the line can be related to its axis.
+     * This color is kept regardless of the applied theme.
+     */
+    private static final Color PRIMARY_Y_AXIS_COLOR = new Color(0, 0, 255);
+
     private final YAxisRuler secondaryYaxis = new YAxisRuler();
 
     public YYAxes() {
         secondaryYaxis.setLocation("right");
         secondaryYaxis.setColor(new Color(0, 127, 0));
-        yaxis.setColor(new Color(0, 0, 255));
+        yaxis.setColor(PRIMARY_Y_AXIS_COLOR);
     }
 
     /**
@@ -71,6 +78,35 @@ public class YYAxes extends Axes {
         } else {
             throw new IllegalArgumentException("Invalid axes number.");
         }
+    }
+
+    /**
+     * Applies the dark theme like the parent class does, but restores the
+     * color of the primary y axis afterwards because the y axis rulers of this
+     * axes are colored to identify their assigned lines. The secondary y axis
+     * is not touched by the parent class and keeps its color as well.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    @Override
+    public void setThemeDark() {
+        super.setThemeDark();
+        yaxis.setColor(PRIMARY_Y_AXIS_COLOR);
+    }
+
+    /**
+     * Applies the light theme like the parent class does, but restores the
+     * color of the primary y axis afterwards for the same reason as described
+     * in setThemeDark.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    @Override
+    public void setThemeLight() {
+        super.setThemeLight();
+        yaxis.setColor(PRIMARY_Y_AXIS_COLOR);
     }
 
     @Override

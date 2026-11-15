@@ -80,7 +80,8 @@ public class MYAxes extends YYAxes {
                     case 2: // 5th axes, violet
                         addAxes.setColor(new Color(128, 0, 128));
                         break;
-                    default:
+                    default: // no identity color, use the theme color
+                        addAxes.setColor(xaxis.getColor());
                         break;
                 }
                 myaxes.add(addAxes);
@@ -135,6 +136,48 @@ public class MYAxes extends YYAxes {
         }
         checkAndCreateAxes(target);
         myaxes.get(target - 3).setLabel(s);
+    }
+
+    /**
+     * Applies the dark theme like the parent class does and additionally
+     * updates the additional y axes which have no identity color assigned.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    @Override
+    public void setThemeDark() {
+        super.setThemeDark();
+        updateNeutralAxesColor();
+    }
+
+    /**
+     * Applies the light theme like the parent class does and additionally
+     * updates the additional y axes which have no identity color assigned.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    @Override
+    public void setThemeLight() {
+        super.setThemeLight();
+        updateNeutralAxesColor();
+    }
+
+    /**
+     * Sets the color of all additional y axes beyond the fifth axis to the
+     * color of the x axis. Only the third to fifth axes have a fixed identity
+     * color that matches their lines, whereas all further axes are drawn in
+     * the neutral ruler color of the current theme. The x axis is used as the
+     * reference because it always holds the ruler color of the applied theme.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    private void updateNeutralAxesColor() {
+        for (int idx = 3; idx < myaxes.size(); idx++) {
+            myaxes.get(idx).setColor(xaxis.getColor());
+        }
     }
 
     @Override

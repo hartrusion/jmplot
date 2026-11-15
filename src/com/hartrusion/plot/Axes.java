@@ -36,6 +36,45 @@ import java.util.List;
 public class Axes {
 
     /**
+     * Background color of the box in the light theme, which is also the
+     * default background color of the box.
+     */
+    public static final Color THEME_LIGHT_BOX_BACKGROUND_COLOR = Color.WHITE;
+
+    /**
+     * Frame line color of the box in the light theme, which is also the
+     * default frame line color of the box.
+     */
+    public static final Color THEME_LIGHT_BOX_LINE_COLOR = Color.LIGHT_GRAY;
+
+    /**
+     * Color of the axis rulers, which includes the ruler lines, ticks, tick
+     * labels and axis labels, in the light theme. This is also the default
+     * color of the axis rulers.
+     */
+    public static final Color THEME_LIGHT_AXIS_RULER_COLOR = Color.BLACK;
+
+    /**
+     * Background color of the box in the dark theme.
+     */
+    public static final Color THEME_DARK_BOX_BACKGROUND_COLOR = Color.BLACK;
+
+    /**
+     * Frame line color of the box in the dark theme, which is the dark gray
+     * (128, 128, 128) of the classic 16 color palette so that the frame stays
+     * visible but less prominent than the axis rulers.
+     */
+    public static final Color THEME_DARK_BOX_LINE_COLOR
+            = new Color(128, 128, 128);
+
+    /**
+     * Color of the axis rulers in the dark theme, which is the light gray
+     * (192, 192, 192) of the classic 16 color palette to keep the retro look.
+     */
+    public static final Color THEME_DARK_AXIS_RULER_COLOR
+            = new Color(192, 192, 192);
+
+    /**
      * Contains double values between 0 and 1 which describe the lower left
      * position of the axis system (first two elements), the width and the
      * height of the axes object.
@@ -454,6 +493,37 @@ public class Axes {
         position[1] = y;
         position[2] = width;
         position[3] = height;
+    }
+
+    /**
+     * Applies the dark theme to this axes by setting a black box background
+     * and light gray axis rulers. Only the elements of the axes are affected,
+     * so lines, texts, cursors and the surrounding figure keep their colors.
+     * The change becomes visible with the next rendering of the figure.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public void setThemeDark() {
+        box.setColor(THEME_DARK_BOX_BACKGROUND_COLOR);
+        box.setLineColor(THEME_DARK_BOX_LINE_COLOR);
+        xaxis.setColor(THEME_DARK_AXIS_RULER_COLOR);
+        yaxis.setColor(THEME_DARK_AXIS_RULER_COLOR);
+    }
+
+    /**
+     * Applies the light theme to this axes, which restores the default colors
+     * of the box and the axis rulers. This is used to revert a previously
+     * applied dark theme.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public void setThemeLight() {
+        box.setColor(THEME_LIGHT_BOX_BACKGROUND_COLOR);
+        box.setLineColor(THEME_LIGHT_BOX_LINE_COLOR);
+        xaxis.setColor(THEME_LIGHT_AXIS_RULER_COLOR);
+        yaxis.setColor(THEME_LIGHT_AXIS_RULER_COLOR);
     }
 
     public SubPlot getSubPlot() {
