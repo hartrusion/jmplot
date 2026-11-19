@@ -26,9 +26,9 @@ package com.hartrusion.plot;
 import static com.hartrusion.plot.VisualizeData.*;
 
 /**
- * Creates a simple XY line plot and applies the dark theme to its axes so that
- * the black box background and the light gray axis rulers can be checked
- * visually.
+ * Creates a simple XY line plot with two lines and a legend and applies the
+ * dark theme to it so that the black box background, the light gray axis
+ * rulers and the dark legend can be checked visually.
  *
  * <p>
  * LLM code generated with Claude Opus 5.5
@@ -40,14 +40,19 @@ public class ExampleTheme {
     public static void main(String[] args) {
         float[] xdata = new float[50];
         float[] ydata = new float[50];
+        float[] ydata2 = new float[50];
         for (int idx = 0; idx < xdata.length; idx++) {
             xdata[idx] = 0.1F * (float) idx;
             ydata[idx] = (float) Math.sin((double) xdata[idx]);
+            ydata2[idx] = (float) Math.cos((double) xdata[idx]);
         }
 
         plot(xdata, ydata);
+        hold("on");
+        plot(xdata, ydata2);
         xlabel("X label");
         ylabel("Y label");
+        legend("Sine", "Cosine");
         theme("dark");
     }
 }

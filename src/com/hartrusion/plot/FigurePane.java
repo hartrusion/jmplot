@@ -106,6 +106,8 @@ public class FigurePane extends Panel implements Figure {
 
     @Override
     public Legend getLastLegend() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // This figure does not hold legends yet, so there is never a last
+        // legend. Returning null allows theme commands to skip the legend.
+        return null;
     }
 }

@@ -42,19 +42,64 @@ import java.util.List;
 public class Legend {
 
     /**
-     * Background color of the legend box.
+     * Background color of the legend box in the light theme, which is also
+     * the default background color of the legend box.
      */
-    public static final Color BACKGROUND_COLOR = Color.WHITE;
+    public static final Color THEME_LIGHT_BACKGROUND_COLOR = Color.WHITE;
 
     /**
-     * Border color of the legend box.
+     * Border color of the legend box in the light theme, which is also the
+     * default border color of the legend box.
      */
-    public static final Color BORDER_COLOR = Color.BLACK;
+    public static final Color THEME_LIGHT_BORDER_COLOR = Color.BLACK;
 
     /**
-     * Color used for the label text.
+     * Color of the label text in the light theme, which is also the default
+     * color of the label text.
      */
-    public static final Color TEXT_COLOR = Color.BLACK;
+    public static final Color THEME_LIGHT_TEXT_COLOR = Color.BLACK;
+
+    /**
+     * Background color of the legend box in the dark theme, which equals the
+     * box background of the dark axes theme so that the legend blends into
+     * the axes it is usually placed in.
+     */
+    public static final Color THEME_DARK_BACKGROUND_COLOR
+            = Axes.THEME_DARK_BOX_BACKGROUND_COLOR;
+
+    /**
+     * Border color of the legend box in the dark theme, which equals the
+     * axis ruler color of the dark axes theme because the border is drawn in
+     * the same color as the text, just as it is in the light theme.
+     */
+    public static final Color THEME_DARK_BORDER_COLOR
+            = Axes.THEME_DARK_AXIS_RULER_COLOR;
+
+    /**
+     * Color of the label text in the dark theme, which equals the axis ruler
+     * color of the dark axes theme so that legend labels and axis labels look
+     * alike.
+     */
+    public static final Color THEME_DARK_TEXT_COLOR
+            = Axes.THEME_DARK_AXIS_RULER_COLOR;
+
+    /**
+     * Background color of the legend box which is used for drawing. It is
+     * changed by the theme methods.
+     */
+    private Color backgroundColor = THEME_LIGHT_BACKGROUND_COLOR;
+
+    /**
+     * Border color of the legend box which is used for drawing. It is changed
+     * by the theme methods.
+     */
+    private Color borderColor = THEME_LIGHT_BORDER_COLOR;
+
+    /**
+     * Color of the label text which is passed to each line when it draws its
+     * legend entry. It is changed by the theme methods.
+     */
+    private Color textColor = THEME_LIGHT_TEXT_COLOR;
 
     /**
      * Font used for legend label text.
@@ -116,6 +161,36 @@ public class Legend {
      */
     public void setLocationInsideAxes(Axes axes) {
         this.axes = axes;
+    }
+
+    /**
+     * Applies the dark theme to this legend by setting a black box background
+     * with a light gray border and light gray label text, which matches the
+     * colors of the dark axes theme. The sample lines keep the colors of
+     * their lines. The change becomes visible with the next rendering of the
+     * figure.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public void setThemeDark() {
+        backgroundColor = THEME_DARK_BACKGROUND_COLOR;
+        borderColor = THEME_DARK_BORDER_COLOR;
+        textColor = THEME_DARK_TEXT_COLOR;
+    }
+
+    /**
+     * Applies the light theme to this legend, which restores the default
+     * colors of the box and the label text. This is used to revert a
+     * previously applied dark theme.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public void setThemeLight() {
+        backgroundColor = THEME_LIGHT_BACKGROUND_COLOR;
+        borderColor = THEME_LIGHT_BORDER_COLOR;
+        textColor = THEME_LIGHT_TEXT_COLOR;
     }
 
     /**
@@ -188,11 +263,11 @@ public class Legend {
         }
 
         // Fill background
-        g.setColor(BACKGROUND_COLOR);
+        g.setColor(backgroundColor);
         g.fillRect(drawX, drawY, boxWidth, boxHeight);
 
         // Draw border
-        g.setColor(BORDER_COLOR);
+        g.setColor(borderColor);
         g.drawRect(drawX, drawY, boxWidth, boxHeight);
 
         // Draw each entry of the legend, this is not done here but in the
@@ -210,7 +285,7 @@ public class Legend {
                     + entryHeight / 2;
 
             lines.get(i).drawToLegend(g, entryX, entryYCenter,
-                    SAMPLE_LINE_LENGTH);
+                    SAMPLE_LINE_LENGTH, textColor);
         }
 
         // g.setFont(previousFont);

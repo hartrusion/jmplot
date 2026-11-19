@@ -473,10 +473,12 @@ public class Line extends CoordinateObject {
      * @param xCoord X coordinate where the legend sample line starts
      * @param yCoord Y coordinate (vertical center of the entry)
      * @param sampleLineLength Length of the exemplary line in pixels
+     * @param labelColor Color of the label text, provided by the legend
+     * because it depends on the theme of the legend.
      */
     public void drawToLegend(Graphics g,
             int xCoord, int yCoord,
-            int sampleLineLength) {
+            int sampleLineLength, Color labelColor) {
         Graphics2D g2 = (Graphics2D) g;
         Color previousColor = g.getColor();
         Stroke previousStroke = g2.getStroke();
@@ -516,7 +518,7 @@ public class Line extends CoordinateObject {
         // Draw the label text to the right of the sample line
         if (label != null && !label.isEmpty()) {
             // g.setFont(Legend.LEGEND_FONT);
-            g.setColor(Legend.TEXT_COLOR);
+            g.setColor(labelColor);
             FontMetrics fm = g.getFontMetrics();
             int textX = xCoord + sampleLineLength + Legend.TEXT_OFFSET;
             // Vertically center the text on the yCoord line

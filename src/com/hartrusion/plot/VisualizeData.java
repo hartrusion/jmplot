@@ -470,7 +470,9 @@ public final class VisualizeData {
      * Applies a color theme to the current axes. Has to be used as
      * theme("dark") or theme("light"), similar to the hold command. The dark
      * theme draws a black box background with light gray axis rulers, whereas
-     * the light theme restores the default colors.
+     * the light theme restores the default colors. The current figure and its
+     * legend are themed as well. Since only already existing objects are
+     * themed, the legend command has to be used before this command.
      * <p>
      * LLM code generated with Claude Opus 5.5
      *
@@ -492,6 +494,15 @@ public final class VisualizeData {
             currentFigure.setThemeDark();
         } else if (theme.equals("light")) {
             currentFigure.setThemeLight();
+        }
+        Legend legend = currentFigure.getLastLegend();
+        if (legend == null) {
+            return;
+        }
+        if (theme.equals("dark")) {
+            legend.setThemeDark();
+        } else if (theme.equals("light")) {
+            legend.setThemeLight();
         }
     }
 }
