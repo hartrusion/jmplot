@@ -124,8 +124,9 @@ public class Axes {
 
     /**
      * True if the dark theme was applied to this axes. It is used to apply the
-     * same theme to cursors which are added after the theme was set, since
-     * cursors are usually created on demand by setCursor.
+     * same theme to cursors and texts which are added after the theme was set,
+     * since cursors are usually created on demand by setCursor and texts can
+     * be added at any time.
      */
     private boolean themeDark = false;
 
@@ -212,6 +213,11 @@ public class Axes {
         }
         texts.add(t);
         t.initComponent(xaxis, yaxis);
+        if (themeDark) {
+            t.setThemeDark();
+        } else {
+            t.setThemeLight();
+        }
     }
 
     /**
@@ -509,10 +515,11 @@ public class Axes {
 
     /**
      * Applies the dark theme to this axes by setting a black box background
-     * and light gray axis rulers. The cursors of this axes are drawn in white,
-     * which also applies to cursors that are added later. Lines, texts and the
-     * surrounding figure keep their colors. The change becomes visible with
-     * the next rendering of the figure.
+     * and light gray axis rulers. The cursors of this axes are drawn in white
+     * and the texts in the light gray of the axis rulers, which also applies
+     * to cursors and texts that are added later. Lines and the surrounding
+     * figure keep their colors. The change becomes visible with the next
+     * rendering of the figure.
      *
      * <p>
      * LLM code generated with Claude Opus 5.5
@@ -526,12 +533,15 @@ public class Axes {
         for (Cursor c : cursors) {
             c.setThemeDark();
         }
+        for (Text t : texts) {
+            t.setThemeDark();
+        }
     }
 
     /**
      * Applies the light theme to this axes, which restores the default colors
-     * of the box, the axis rulers and the cursors. This is used to revert a previously
-     * applied dark theme.
+     * of the box, the axis rulers, the cursors and the texts. This is used to
+     * revert a previously applied dark theme.
      *
      * <p>
      * LLM code generated with Claude Opus 5.5
@@ -544,6 +554,9 @@ public class Axes {
         themeDark = false;
         for (Cursor c : cursors) {
             c.setThemeLight();
+        }
+        for (Text t : texts) {
+            t.setThemeLight();
         }
     }
 
