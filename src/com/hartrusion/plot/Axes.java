@@ -123,6 +123,13 @@ public class Axes {
     protected boolean hold = false;
 
     /**
+     * True if the dark theme was applied to this axes. It is used to apply the
+     * same theme to cursors which are added after the theme was set, since
+     * cursors are usually created on demand by setCursor.
+     */
+    private boolean themeDark = false;
+
+    /**
      * The subplot this axes is assigned to, if it is existing. Can be null if
      * the axes is not being managed by a subplot.
      */
@@ -235,6 +242,11 @@ public class Axes {
     public void addCursor(Cursor c) {
         cursors.add(c);
         c.initComponent(xaxis, yaxis);
+        if (themeDark) {
+            c.setThemeDark();
+        } else {
+            c.setThemeLight();
+        }
     }
 
     /**
@@ -497,9 +509,10 @@ public class Axes {
 
     /**
      * Applies the dark theme to this axes by setting a black box background
-     * and light gray axis rulers. Only the elements of the axes are affected,
-     * so lines, texts, cursors and the surrounding figure keep their colors.
-     * The change becomes visible with the next rendering of the figure.
+     * and light gray axis rulers. The cursors of this axes are drawn in white,
+     * which also applies to cursors that are added later. Lines, texts and the
+     * surrounding figure keep their colors. The change becomes visible with
+     * the next rendering of the figure.
      *
      * <p>
      * LLM code generated with Claude Opus 5.5
@@ -509,11 +522,15 @@ public class Axes {
         box.setLineColor(THEME_DARK_BOX_LINE_COLOR);
         xaxis.setColor(THEME_DARK_AXIS_RULER_COLOR);
         yaxis.setColor(THEME_DARK_AXIS_RULER_COLOR);
+        themeDark = true;
+        for (Cursor c : cursors) {
+            c.setThemeDark();
+        }
     }
 
     /**
      * Applies the light theme to this axes, which restores the default colors
-     * of the box and the axis rulers. This is used to revert a previously
+     * of the box, the axis rulers and the cursors. This is used to revert a previously
      * applied dark theme.
      *
      * <p>
@@ -524,6 +541,10 @@ public class Axes {
         box.setLineColor(THEME_LIGHT_BOX_LINE_COLOR);
         xaxis.setColor(THEME_LIGHT_AXIS_RULER_COLOR);
         yaxis.setColor(THEME_LIGHT_AXIS_RULER_COLOR);
+        themeDark = false;
+        for (Cursor c : cursors) {
+            c.setThemeLight();
+        }
     }
 
     public SubPlot getSubPlot() {

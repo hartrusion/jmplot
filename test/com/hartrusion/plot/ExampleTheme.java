@@ -28,7 +28,9 @@ import static com.hartrusion.plot.VisualizeData.*;
 /**
  * Creates a simple XY line plot with two lines and a legend and applies the
  * dark theme to it so that the black box background, the light gray axis
- * rulers and the dark legend can be checked visually.
+ * rulers, the dark legend and the white cursor can be checked visually. The
+ * cursor is set after the theme to check that later added cursors follow the
+ * theme of the axes.
  *
  * <p>
  * LLM code generated with Claude Opus 5.5
@@ -54,5 +56,6 @@ public class ExampleTheme {
         ylabel("Y label");
         legend("Sine", "Cosine");
         theme("dark");
+        gca().setCursor(2.5F, 0.6F);
     }
 }

@@ -38,6 +38,25 @@ import java.awt.Shape;
  */
 public class Cursor extends CoordinateObject {
 
+    /**
+     * Color of the crosshair in the light theme, which is also the default
+     * color of the cursor.
+     */
+    public static final Color THEME_LIGHT_COLOR = Color.BLACK;
+
+    /**
+     * Color of the crosshair in the dark theme, which is the inverted color of
+     * the light theme so that the cursor stays visible on the black box
+     * background of the dark axes theme.
+     */
+    public static final Color THEME_DARK_COLOR = Color.WHITE;
+
+    /**
+     * Color of the crosshair which is used for drawing. It is changed by the
+     * theme methods.
+     */
+    private Color color = THEME_LIGHT_COLOR;
+
     private float x;
     private float y;
 
@@ -60,6 +79,29 @@ public class Cursor extends CoordinateObject {
     public void setPoint(float x, float y) {
         this.x = x;
         this.y = y;
+    }
+
+    /**
+     * Applies the dark theme to this cursor, which draws the crosshair in
+     * white instead of black. The change becomes visible with the next
+     * rendering of the figure.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public void setThemeDark() {
+        color = THEME_DARK_COLOR;
+    }
+
+    /**
+     * Applies the light theme to this cursor, which restores the default black
+     * crosshair color. This is used to revert a previously applied dark theme.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     */
+    public void setThemeLight() {
+        color = THEME_LIGHT_COLOR;
     }
 
     /**
@@ -89,7 +131,7 @@ public class Cursor extends CoordinateObject {
         g.setClip(boxArea);
 
         // Draw a crosshair styled cursor - so far the only option
-        g.setColor(Color.BLACK);
+        g.setColor(color);
 
         int xMiddle = xaxis.getCoordinateValue(x);
         int yMiddle = yaxis.getCoordinateValue(y);
