@@ -97,6 +97,26 @@ abstract class AxisRuler extends AxisElementProperties {
 
     private NumberFormat numberFormat = DecimalFormat.getInstance();
 
+    /**
+     * Maximum number of tick intervals which the axes objects request with
+     * setTicks(int) whenever they set new limits.
+     */
+    static final int DEFAULT_TICK_NUMBER = 10;
+
+    /**
+     * Mantissas of the steps between round tick values in ascending order.
+     * The step is one of these values multiplied with a power of ten, and the
+     * last value 10 is the fallback that always fits.
+     */
+    private static final double[] ROUND_TICK_MANTISSAS = {1.0, 2.0, 2.5, 5.0,
+        10.0};
+
+    /**
+     * Mantissa which needs one fraction digit more than its power of ten,
+     * since 2.5 has a digit behind the 2 whereas 1, 2 and 5 have none.
+     */
+    private static final double FRACTIONAL_MANTISSA = 2.5;
+
     protected boolean labelVisible = false;
     protected String label;
 
@@ -180,6 +200,61 @@ abstract class AxisRuler extends AxisElementProperties {
             tick[idx] = tick[idx - 1] + increment;
         }
         generateTickLabels();
+    }
+
+    /**
+     * Generates ticks with round values between the current limits, so that
+     * the labels show values like 0, 0.5, 1, 1.5 instead of the plain tenth
+     * parts of an arbitrary range. The step between the ticks is the
+     * smallest value of 1, 2, 2.5 or 5 multiplied with a power of ten which
+     * does not result in more than the given number of intervals. The ticks
+     * start at the first multiple of the step which is not below the lower
+     * limit, so that the limits themselves are usually not marked, because
+     * the limits are not changed by this method. The tick values are
+     * calculated by multiplication instead of summing up the step, which
+     * would accumulate the rounding errors of the float values.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     *
+     * @param number Maximum number of intervals between the ticks within the
+     * limits, which must be at least 1.
+     */
+    public void setTicks(int number) {
+        double lower = lim[0];
+        double upper = lim[1];
+        if (!Double.isFinite(lower) || !Double.isFinite(upper)
+                || upper <= lower || number < 1) {
+            return; // no range to place ticks into
+        }
+        double rawStep = (upper - lower) / number;
+        double magnitude = Math.pow(10.0, Math.floor(Math.log10(rawStep)));
+        double mantissa
+                = ROUND_TICK_MANTISSAS[ROUND_TICK_MANTISSAS.length - 1];
+        for (double candidate : ROUND_TICK_MANTISSAS) {
+            // The tolerance accepts a step that equals rawStep except for
+            // floating point noise, for example 0.1 for a range of 1.
+            if (candidate * magnitude >= rawStep * (1.0 - 1e-9)) {
+                mantissa = candidate;
+                break;
+            }
+        }
+        double step = mantissa * magnitude;
+        long firstIndex = (long) Math.ceil(lower / step - 1e-9);
+        long lastIndex = (long) Math.floor(upper / step + 1e-9);
+        int length = (int) (lastIndex - firstIndex + 1);
+        if (tick.length != length) {
+            tick = new float[length];
+        }
+        for (int idx = 0; idx < length; idx++) {
+            tick[idx] = (float) ((firstIndex + idx) * step);
+        }
+        // A step of 10^n needs -n fraction digits, which are none for n >= 0.
+        int digits = -(int) Math.round(Math.log10(magnitude));
+        if (mantissa == FRACTIONAL_MANTISSA) {
+            digits++;
+        }
+        generateTickLabels(Math.max(0, digits));
     }
 
     /**
@@ -270,10 +345,22 @@ abstract class AxisRuler extends AxisElementProperties {
         // try to calculate a proper number of digits
         int digits = -2 + (int) (Math.log10(lim[1] - lim[0]));
         if (digits < 0) {
-            numberFormat.setMaximumFractionDigits(-digits);
+            generateTickLabels(-digits);
         } else {
-            numberFormat.setMaximumFractionDigits(0);
+            generateTickLabels(0);
         }
+    }
+
+    /**
+     * Generates the tickLabels from the tick array with a given maximum
+     * number of fraction digits. Used by setTicks(int), which knows the
+     * number of digits that its round tick values need.
+     *
+     * @param fractionDigits Maximum number of digits behind the decimal
+     * separator.
+     */
+    private void generateTickLabels(int fractionDigits) {
+        numberFormat.setMaximumFractionDigits(fractionDigits);
         if (tickLabels.length != tick.length) {
             tickLabels = new String[tick.length];
         }

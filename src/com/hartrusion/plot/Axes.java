@@ -175,30 +175,10 @@ public class Axes {
         // Adding a line will set this axes to the last current axes.
         VisualizeData.setCurrentAxes(this);
         if (!hold) { // trigger autoscale
+            // The ticks are set to round values by xLim and yLim, which
+            // are called by the autoscaling.
             autoX();
             autoY();
-
-            if (l.hasXValues()) {
-                if ((l.getXMax() - l.getXMin()) < 1e-40) { // all X vals zero
-                    xaxis.setTicks(
-                            l.getXMin() - 0.5F, 0.5F, l.getXMax() + 0.5F);
-                } else {
-                    xaxis.setTicks(l.getXMin(),
-                            (l.getXMax() - l.getXMin()) / 5F,
-                            l.getXMax());
-                }
-            }
-
-            if (l.hasYValues()) {
-                if ((l.getYMax() - l.getYMin()) < 1e-40) { // all Y vals zero
-                    yaxis.setTicks(
-                            l.getYMin() - 0.5F, 0.5F, l.getYMax() + 0.5F);
-                } else {
-                    yaxis.setTicks(l.getYMin(),
-                            (l.getYMax() - l.getYMin()) / 10F,
-                            l.getYMax());
-                }
-            }
         }
     }
     
@@ -389,12 +369,12 @@ public class Axes {
 
     public void xLim(float x1, float x2) {
         xaxis.setLim(x1, x2);
-        xaxis.setTicks(x1, (x2 - x1) / 10F, x2);
+        xaxis.setTicks(AxisRuler.DEFAULT_TICK_NUMBER);
     }
 
     public void yLim(float y1, float y2) {
         yaxis.setLim(y1, y2);
-        yaxis.setTicks(y1, (y2 - y1) / 10F, y2);
+        yaxis.setTicks(AxisRuler.DEFAULT_TICK_NUMBER);
     }
 
     public void xlabel(String s) {

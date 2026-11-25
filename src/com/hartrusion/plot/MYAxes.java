@@ -125,7 +125,7 @@ public class MYAxes extends YYAxes {
         }
         checkAndCreateAxes(target);
         myaxes.get(target - 3).setLim(y1, y2);
-        myaxes.get(target - 3).setTicks(y1, (y2 - y1) / 10F, y2);
+        myaxes.get(target - 3).setTicks(AxisRuler.DEFAULT_TICK_NUMBER);
     }
 
     @Override

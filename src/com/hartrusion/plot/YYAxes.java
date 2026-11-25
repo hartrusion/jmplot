@@ -54,7 +54,7 @@ public class YYAxes extends Axes {
     public void yLim(int target, float y1, float y2) {
         if (target == 2) {
             secondaryYaxis.setLim(y1, y2);
-            secondaryYaxis.setTicks(y1, (y2 - y1) / 10F, y2);
+            secondaryYaxis.setTicks(AxisRuler.DEFAULT_TICK_NUMBER);
         } else if (target == 1) {
             super.yLim(y1, y2);
         } else {
