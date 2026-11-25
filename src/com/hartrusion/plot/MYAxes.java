@@ -275,6 +275,27 @@ public class MYAxes extends YYAxes {
     }
 
     @Override
+    protected void markRulersPainted() {
+        super.markRulersPainted();
+        for (YAxisRuler ruler : myaxes) {
+            ruler.markPainted();
+        }
+    }
+
+    @Override
+    protected boolean isRulerModifiedSincePaint() {
+        if (super.isRulerModifiedSincePaint()) {
+            return true;
+        }
+        for (YAxisRuler ruler : myaxes) {
+            if (ruler.isModifiedSincePaint()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void applyZoomBox(int startX, int startY, int endX, int endY) {
         super.applyZoomBox(startX, startY, endX, endY);
         float y1, y2, minY, maxY;

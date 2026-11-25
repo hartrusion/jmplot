@@ -57,6 +57,15 @@ public class PaintThreadManager {
     private final AtomicBoolean rendering = new AtomicBoolean(false);
 
     /**
+     * Set by each render request and cleared by the render task right before
+     * it renders. A request which arrives while a rendering is in progress
+     * therefore leads to one more rendering afterwards, because the running
+     * rendering may already have read the data before the change that
+     * caused the request.
+     */
+    private final AtomicBoolean renderRequested = new AtomicBoolean(false);
+
+    /**
      * Single-thread executor – one thread is kept alive and ready in the pool.
      * When a render task is submitted it executes immediately (no thread
      * creation delay). When idle, the thread simply waits (no CPU usage,
@@ -101,6 +110,7 @@ public class PaintThreadManager {
      * (the running task will produce a fresh image anyway).
      */
     public void requestRender() {
+        renderRequested.set(true);
         if (rendering.compareAndSet(false, true)) {
             executor.submit(this::renderTask);
         }
@@ -113,25 +123,36 @@ public class PaintThreadManager {
      */
     private void renderTask() {
         try {
-            int w = figure.getWidth();
-            int h = figure.getHeight();
+            // Render again as long as requests arrived during the rendering.
+            while (renderRequested.getAndSet(false)) {
+                int w = figure.getWidth();
+                int h = figure.getHeight();
 
-            if (w <= 0 || h <= 0) {
-                return; // component not yet laid out
+                if (w <= 0 || h <= 0) {
+                    return; // component not yet laid out
+                }
+
+                renderFrame(w, h);
+                lastWidth = w;
+                lastHeight = h;
+
+                // Trigger a repaint on the EDT so the new image gets
+                // displayed. This is a lightweight call – it just schedules a
+                // paint event.
+                figure.repaint();
             }
-
-            renderFrame(w, h);
-            lastWidth = w;
-            lastHeight = h;
-
-            // Trigger a repaint on the EDT so the new image gets displayed.
-            // This is a lightweight call – it just schedules a paint event.
-            figure.repaint();
         } catch (Exception e) {
             System.err.println("PlotRenderer: " + e.getMessage());
         } finally {
             // Allow the next render request to be submitted
             rendering.set(false);
+            // A request that arrived between the last check of the loop and
+            // the reset above found the task still running and did not
+            // submit a new one, so it is submitted here.
+            if (renderRequested.get()
+                    && rendering.compareAndSet(false, true)) {
+                executor.submit(this::renderTask);
+            }
         }
     }
 

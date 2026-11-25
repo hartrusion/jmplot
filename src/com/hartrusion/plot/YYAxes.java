@@ -155,6 +155,18 @@ public class YYAxes extends Axes {
     }
 
     @Override
+    protected void markRulersPainted() {
+        super.markRulersPainted();
+        secondaryYaxis.markPainted();
+    }
+
+    @Override
+    protected boolean isRulerModifiedSincePaint() {
+        return super.isRulerModifiedSincePaint()
+                || secondaryYaxis.isModifiedSincePaint();
+    }
+
+    @Override
     public void applyZoomBox(int startX, int startY, int endX, int endY) {
         super.applyZoomBox(startX, startY, endX, endY);
         float y1 = secondaryYaxis.getValueForCoordinate(startY);

@@ -136,6 +136,12 @@ public class Axes {
      */
     private SubPlot parentSubPlot;
 
+    /**
+     * Listeners which are notified when the x axis limits are set, mainly
+     * used by XAxisLink to zoom several axes together.
+     */
+    private final List<AxesLimitListener> limitListeners = new ArrayList<>();
+
 //    Axes() {
 //    }
     /**
@@ -275,6 +281,11 @@ public class Axes {
         if (!java.util.Arrays.equals(boxCoordinates, oldBoxCoordinates)) {
             return true;
         }
+        // Check if limits or ticks changed, for example by zooming, by
+        // autoscaling or by a linked axes
+        if (isRulerModifiedSincePaint()) {
+            return true;
+        }
         // Check all lines
         for (Line l : lines) {
             if (l.isDrawingDeprecated()) {
@@ -295,6 +306,9 @@ public class Axes {
      */
     public void paintContent(Graphics g,
             float parentWidth, float parentHeight) {
+        // Remember the state of the rulers before any of them is read, so
+        // that a change during this painting requests the next one.
+        markRulersPainted();
         // Recalculate the coordinates where the box and lines shall be drawn.
         // This is done like this to prevent rounding issues and keep the pixel
         // values consistent.
@@ -370,6 +384,45 @@ public class Axes {
     public void xLim(float x1, float x2) {
         xaxis.setLim(x1, x2);
         xaxis.setTicks(AxisRuler.DEFAULT_TICK_NUMBER);
+        // Iterate over a copy, since a listener may remove itself.
+        for (AxesLimitListener listener : new ArrayList<>(limitListeners)) {
+            listener.xLimChanged(this, x1, x2);
+        }
+    }
+
+    /**
+     * Adds a listener which is notified each time the x axis limits are set.
+     *
+     * @param listener Listener to add, which is added only once.
+     */
+    public void addLimitListener(AxesLimitListener listener) {
+        if (!limitListeners.contains(listener)) {
+            limitListeners.add(listener);
+        }
+    }
+
+    public void removeLimitListener(AxesLimitListener listener) {
+        limitListeners.remove(listener);
+    }
+
+    /**
+     * Marks the limits and ticks of all rulers as painted. Extensions of this
+     * class with additional rulers override this method to include them.
+     */
+    protected void markRulersPainted() {
+        xaxis.markPainted();
+        yaxis.markPainted();
+    }
+
+    /**
+     * Tells whether the limits or ticks of any ruler were changed after the
+     * last painting began. Extensions of this class with additional rulers
+     * override this method to include them.
+     *
+     * @return true if a ruler changed since its last painting
+     */
+    protected boolean isRulerModifiedSincePaint() {
+        return xaxis.isModifiedSincePaint() || yaxis.isModifiedSincePaint();
     }
 
     public void yLim(float y1, float y2) {

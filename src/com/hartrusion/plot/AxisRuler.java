@@ -98,6 +98,23 @@ abstract class AxisRuler extends AxisElementProperties {
     private NumberFormat numberFormat = DecimalFormat.getInstance();
 
     /**
+     * Counts the changes of the limits and ticks of this ruler. The counter is
+     * compared with paintedModificationCount to find out whether the ruler
+     * changed after it was painted the last time, because a figure which
+     * renders into a buffered image has to render again in that case.
+     */
+    private volatile int modificationCount = 0;
+
+    /**
+     * Value of modificationCount when the painting of the ruler began the
+     * last time. A change during a painting therefore leaves the two values
+     * different, so that the next check requests a new painting. The
+     * initial value differs from modificationCount, because the ruler has
+     * not been painted yet.
+     */
+    private volatile int paintedModificationCount = -1;
+
+    /**
      * Maximum number of tick intervals which the axes objects request with
      * setTicks(int) whenever they set new limits.
      */
@@ -155,6 +172,27 @@ abstract class AxisRuler extends AxisElementProperties {
     public void setLim(float lower, float upper) {
         lim[0] = lower;
         lim[1] = upper;
+        modificationCount++;
+    }
+
+    /**
+     * Remembers the current state of limits and ticks as painted. Called by
+     * the axes object at the beginning of its painting, before the ruler and
+     * the lines read the limits.
+     */
+    void markPainted() {
+        paintedModificationCount = modificationCount;
+    }
+
+    /**
+     * Tells whether limits or ticks were changed after the painting began the
+     * last time, which is used by the axes object to decide whether the
+     * figure has to be rendered again.
+     *
+     * @return true if the painted state is outdated
+     */
+    boolean isModifiedSincePaint() {
+        return modificationCount != paintedModificationCount;
     }
 
     /**
@@ -167,6 +205,7 @@ abstract class AxisRuler extends AxisElementProperties {
             this.tick = new float[tick.length];
         }
         System.arraycopy(tick, 0, this.tick, 0, tick.length);
+        modificationCount++;
     }
 
     /**
@@ -360,6 +399,8 @@ abstract class AxisRuler extends AxisElementProperties {
      * separator.
      */
     private void generateTickLabels(int fractionDigits) {
+        // All methods which set ticks from values end here.
+        modificationCount++;
         numberFormat.setMaximumFractionDigits(fractionDigits);
         if (tickLabels.length != tick.length) {
             tickLabels = new String[tick.length];

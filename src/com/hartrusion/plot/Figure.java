@@ -76,6 +76,14 @@ public interface Figure {
     public void setBackground(Color c);
 
     /**
+     * Requests a new painting of the figure. This method is already
+     * implemented by java.awt.Component, which all figure implementations
+     * extend, and is declared here so that XAxisLink can repaint the figures
+     * of the axes whose limits it changed.
+     */
+    public void repaint();
+
+    /**
      * Adapts the figure background to the dark theme. Since the background is
      * usually provided by the swing look and feel, it is only replaced by
      * THEME_DARK_BACKGROUND_COLOR if it is not already dark or if no
