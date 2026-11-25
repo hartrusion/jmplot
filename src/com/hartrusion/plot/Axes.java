@@ -410,9 +410,15 @@ public class Axes {
      */
     public void autoX() {
         boolean valueFound = false;
-        float xMax = Float.MIN_VALUE;
+        // Float.MIN_VALUE is the smallest positive number and not the most
+        // negative one, so the maximum has to start at negative infinity to
+        // be found for data that lies completely below zero.
+        float xMax = Float.NEGATIVE_INFINITY;
         float xMin = Float.MAX_VALUE;
         for (Line l : lines) {
+            if (!l.hasXValues()) {
+                continue; // Only NaN values, which have no range.
+            }
             if (l.getXMin() < xMin) {
                 xMin = l.getXMin();
             }
@@ -432,17 +438,15 @@ public class Axes {
      */
     public void autoY() {
         boolean valueFound = false;
-        float yMax = Float.MIN_VALUE;
+        // Negative infinity as start value, see autoX.
+        float yMax = Float.NEGATIVE_INFINITY;
         float yMin = Float.MAX_VALUE;
         for (Line l : lines) {
             if (l.getYAxis() != yaxis) {
                 continue; // This line is assigned to a different ruler.
             }
-            if (l.getYMin() == Float.MAX_VALUE) {
-                continue; // probably just an array of NaN.
-            }
-            if (l.getYMin() == Float.MIN_VALUE) {
-                continue; // probably just an array of NaN.
+            if (!l.hasYValues()) {
+                continue; // Only NaN values, which have no range.
             }
             if (l.getYMin() < yMin) {
                 yMin = l.getYMin();

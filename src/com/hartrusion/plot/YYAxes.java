@@ -126,17 +126,15 @@ public class YYAxes extends Axes {
             super.autoY();
         } else if (target == 2) {
             boolean valueFound = false;
-            float yMax = Float.MIN_VALUE;
+            // Negative infinity as start value, see Axes.autoX.
+            float yMax = Float.NEGATIVE_INFINITY;
             float yMin = Float.MAX_VALUE;
             for (Line l : lines) {
                 if (l.getYAxis() != secondaryYaxis) {
                     continue; // This line is not assigned to the secondary Y
                 }
-                if (l.getYMin() == Float.MAX_VALUE) {
-                    continue; // probably just an array of NaN.
-                }
-                if (l.getYMin() == Float.MIN_VALUE) {
-                    continue; // probably just an array of NaN.
+                if (!l.hasYValues()) {
+                    continue; // Only NaN values, which have no range.
                 }
                 if (l.getYMin() < yMin) {
                     yMin = l.getYMin();

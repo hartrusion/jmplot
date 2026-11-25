@@ -261,8 +261,9 @@ public class Line extends CoordinateObject {
 
     /**
      * Gets the largest X number of the data that is stored in this line object.
-     * Note that the variable is initialized with Float.MIN_VALUE so if there is
-     * nothing in the data array than NaN, it will return MIN_VALUE.
+     * Note that the variable is initialized with Float.NEGATIVE_INFINITY so if
+     * there is nothing in the data array than NaN, it will return
+     * NEGATIVE_INFINITY.
      *
      * @return largest number
      */
@@ -289,8 +290,9 @@ public class Line extends CoordinateObject {
 
     /**
      * Gets the largest Y number of the data that is stored in this line object.
-     * Note that the variable is initialized with Float.MIN_VALUE so if there is
-     * nothing in the data array than NaN, it will return MIN_VALUE.
+     * Note that the variable is initialized with Float.NEGATIVE_INFINITY so if
+     * there is nothing in the data array than NaN, it will return
+     * NEGATIVE_INFINITY.
      *
      * @return largest number
      */
@@ -435,7 +437,7 @@ public class Line extends CoordinateObject {
 
     private synchronized void updateYMaxProperty() {
         boolean yDataFinite;
-        yMax = Float.MIN_VALUE;
+        yMax = Float.NEGATIVE_INFINITY;
         for (int idx = 0; idx < ydata.length; idx++) {
             yDataFinite = Double.isFinite(ydata[idx]);
             if (ydata[idx] > yMax && yDataFinite) {
