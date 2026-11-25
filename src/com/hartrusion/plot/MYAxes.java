@@ -180,10 +180,39 @@ public class MYAxes extends YYAxes {
         }
     }
 
+    /**
+     * Autoscales all y axes, which are the primary and the secondary axis of
+     * the parent class and all additional axes on the left side.
+     */
     @Override
     public void autoY() {
         super.autoY();
+        for (int idx = 0; idx < myaxes.size(); idx++) {
+            autoY(idx + 3);
+        }
+    }
 
+    /**
+     * Autoscales the given y axis. The primary and the secondary axis are
+     * handled by the parent class, and an additional axis which does not
+     * exist yet is not created by this call.
+     *
+     * @param target Axes nr (1: primary left, 2: secondary right, 3 and more
+     * are additional axes on the left).
+     */
+    @Override
+    public void autoY(int target) {
+        if (target <= 2) {
+            super.autoY(target);
+            return;
+        }
+        if (target - 3 >= myaxes.size()) {
+            return;
+        }
+        float[] limits = calculateAutoYLimits(myaxes.get(target - 3));
+        if (limits != null) {
+            yLim(target, limits[0], limits[1]);
+        }
     }
 
     @Override

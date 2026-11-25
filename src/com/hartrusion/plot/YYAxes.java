@@ -125,32 +125,9 @@ public class YYAxes extends Axes {
         if (target == 1) {
             super.autoY();
         } else if (target == 2) {
-            boolean valueFound = false;
-            // Negative infinity as start value, see Axes.autoX.
-            float yMax = Float.NEGATIVE_INFINITY;
-            float yMin = Float.MAX_VALUE;
-            for (Line l : lines) {
-                if (l.getYAxis() != secondaryYaxis) {
-                    continue; // This line is not assigned to the secondary Y
-                }
-                if (!l.hasYValues()) {
-                    continue; // Only NaN values, which have no range.
-                }
-                if (l.getYMin() < yMin) {
-                    yMin = l.getYMin();
-                }
-                if (l.getYMax() > yMax) {
-                    yMax = l.getYMax();
-                }
-                valueFound = true;
-            }
-            // Having identical values: Place line in the middle by padding with 1
-            if (yMin == yMax) {
-                yMin -= 1.0F;
-                yMax += 1.0F;
-            }
-            if (valueFound) {
-                yLim(2, yMin, yMax);
+            float[] limits = calculateAutoYLimits(secondaryYaxis);
+            if (limits != null) {
+                yLim(2, limits[0], limits[1]);
             }
         }
     }

@@ -437,12 +437,32 @@ public class Axes {
      * Autoscale the y-Axes
      */
     public void autoY() {
+        float[] limits = calculateAutoYLimits(yaxis);
+        if (limits != null) {
+            yLim(limits[0], limits[1]);
+        }
+    }
+
+    /**
+     * Calculates the limits which autoscaling applies to a y axis ruler. The
+     * limits enclose the finite values of all lines that are assigned to this
+     * ruler, whereas lines with only NaN values are skipped because they
+     * have no range. Extensions of this class with more than one y axis call
+     * this method for each of their rulers, so that all rulers are scaled in
+     * the same way.
+     *
+     * @param ruler y axis ruler for which the lines are evaluated
+     * @return {lower, upper}, or null if no line of the ruler has a finite
+     * value. Identical values are padded by 1 in both directions, so that
+     * the line is placed in the middle of the axis.
+     */
+    protected float[] calculateAutoYLimits(YAxisRuler ruler) {
         boolean valueFound = false;
         // Negative infinity as start value, see autoX.
         float yMax = Float.NEGATIVE_INFINITY;
         float yMin = Float.MAX_VALUE;
         for (Line l : lines) {
-            if (l.getYAxis() != yaxis) {
+            if (l.getYAxis() != ruler) {
                 continue; // This line is assigned to a different ruler.
             }
             if (!l.hasYValues()) {
@@ -456,14 +476,15 @@ public class Axes {
             }
             valueFound = true;
         }
+        if (!valueFound) {
+            return null;
+        }
         // Having identical values: Place line in the middle by padding with 1
         if (yMin == yMax) {
             yMin -= 1.0F;
             yMax += 1.0F;
         }
-        if (valueFound) {
-            yLim(yMin, yMax);
-        }
+        return new float[]{yMin, yMax};
     }
 
     /**
