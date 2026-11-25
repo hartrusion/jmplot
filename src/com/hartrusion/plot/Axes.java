@@ -572,6 +572,24 @@ public class Axes {
     }
 
     /**
+     * Returns the share of the parent width which is occupied by additional
+     * y axes left of the box. The position of an axes object with such axes
+     * describes the outer frame including them, so that the box is narrower
+     * and placed further right than the position says. Code which stacks
+     * several figures can use this value to place the boxes of axes with a
+     * different number of y axes exactly above each other. This class has no
+     * additional y axes and returns 0.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     *
+     * @return share of the parent width between 0 and 1
+     */
+    public float getAdditionalYAxesShare() {
+        return 0F;
+    }
+
+    /**
      * Applies the dark theme to this axes by setting a black box background
      * and light gray axis rulers. The cursors of this axes are drawn in white
      * and the texts in the light gray of the axis rulers, which also applies

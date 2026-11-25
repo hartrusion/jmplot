@@ -238,7 +238,7 @@ public class MYAxes extends YYAxes {
      * axes are being added to the left and how they are spaced.
      */
     private void setSuperPosition() {
-        float xDiff = addYSpacing * (float) myaxes.size();
+        float xDiff = getAdditionalYAxesShare();
         super.setPosition(outerPosition[0] + xDiff,
                 outerPosition[1],
                 outerPosition[2] - xDiff,
@@ -272,6 +272,21 @@ public class MYAxes extends YYAxes {
             }
             l.paintContent(g);
         }
+    }
+
+    /**
+     * Returns the share of the parent width which is occupied by the
+     * additional y axes left of the box, which is the spacing of these axes
+     * multiplied by their number.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     *
+     * @return share of the parent width between 0 and 1
+     */
+    @Override
+    public float getAdditionalYAxesShare() {
+        return addYSpacing * (float) myaxes.size();
     }
 
     @Override
