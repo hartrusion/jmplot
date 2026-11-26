@@ -169,6 +169,13 @@ public class Axes {
     private final ValueBox xCursorDeltaBox = new ValueBox();
 
     /**
+     * Listeners which are notified when the user inserts or moves an x
+     * cursor with the mouse, mainly used by applications to synchronize the
+     * x cursors of several axes.
+     */
+    private final List<XCursorListener> xCursorListeners = new ArrayList<>();
+
+    /**
      * Distance between the upper edge of the box and the value box with the
      * delta x of two x cursors, which places it below the cursor handles.
      */
@@ -322,7 +329,8 @@ public class Axes {
      * further clicks do not remove or move them. All cursors store their
      * position as axis values, so that they keep their place on the data
      * when the axes are zoomed or panned. A change of the mode removes the
-     * cursors of the previous mode.
+     * cursors of the previous mode. XCursorListener describes how the x
+     * cursors of several axes are kept in sync.
      *
      * <p>
      * LLM code generated with Claude Opus 5.5
@@ -372,6 +380,56 @@ public class Axes {
     }
 
     /**
+     * Sets the x cursors to the given values, which is used to synchronize
+     * the x cursors of several axes as explained in XCursorListener. If the
+     * number of values equals the number of existing x cursors, the cursors
+     * are moved, so that no objects are created while a synchronized cursor
+     * is dragged. Otherwise the x cursors are replaced, whereby values beyond
+     * the number of cursors of the cursor mode are ignored. The x cursor
+     * listeners are not notified, and the figure has to be painted again by
+     * the caller.
+     *
+     * @param values x values in the order of getXCursorValues, an empty
+     * array removes all x cursors
+     */
+    public void setXCursorValues(float... values) {
+        if (values.length == xCursors.size()) {
+            for (int idx = 0; idx < values.length; idx++) {
+                xCursors.get(idx).setX(values[idx]);
+            }
+            return;
+        }
+        xCursors.clear();
+        for (float x : values) {
+            addXCursor(x);
+        }
+    }
+
+    /**
+     * Adds a listener which is notified when the user inserts or moves an x
+     * cursor with the mouse. XCursorListener explains how such a listener
+     * synchronizes the x cursors of several axes.
+     *
+     * @param listener listener to add, which is added only once
+     */
+    public void addXCursorListener(XCursorListener listener) {
+        if (!xCursorListeners.contains(listener)) {
+            xCursorListeners.add(listener);
+        }
+    }
+
+    public void removeXCursorListener(XCursorListener listener) {
+        xCursorListeners.remove(listener);
+    }
+
+    private void notifyXCursorListeners() {
+        // Iterate over a copy, since a listener may remove itself.
+        for (XCursorListener listener : new ArrayList<>(xCursorListeners)) {
+            listener.xCursorsChanged(this);
+        }
+    }
+
+    /**
      * Handles a click into the box according to the cursor mode. Called from
      * the figure pane when the left mouse button was released at nearly the
      * position where it was pressed.
@@ -387,7 +445,11 @@ public class Axes {
                 return movePointCursor(px, py);
             case X_CURSOR:
             case X_CURSOR_DUAL:
-                return addXCursor(xaxis.getValueForCoordinate(px));
+                if (!addXCursor(xaxis.getValueForCoordinate(px))) {
+                    return false;
+                }
+                notifyXCursorListeners();
+                return true;
             default:
                 return false;
         }
@@ -496,6 +558,7 @@ public class Axes {
         int limited = Math.max(xaxis.getCoordinateLineStart(),
                 Math.min(xaxis.getCoordinateLineEnd(), px));
         c.setX(xaxis.getValueForCoordinate(limited));
+        notifyXCursorListeners();
     }
 
     /**
