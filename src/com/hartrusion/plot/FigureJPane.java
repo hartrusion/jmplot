@@ -95,6 +95,17 @@ public class FigureJPane extends JComponent implements Figure {
 
     private boolean forcePaint = false;
 
+    /**
+     * Font of all texts of the figure, which are the tick labels, the axis
+     * labels, the legends and the value boxes of the cursors. It is set
+     * explicitly on every graphics object, because the graphics of an image
+     * start with Dialog 12, whereas the graphics of the EDT start with the
+     * font of the look and feel, for example Tahoma 11 with the Windows look
+     * and feel, so that the texts would change their size depending on where
+     * they were painted.
+     */
+    static final Font FIGURE_FONT = new Font(Font.DIALOG, Font.PLAIN, 12);
+
     public FigureJPane() {
         axes.add(new Axes()); // construct the default axes
 
@@ -385,6 +396,13 @@ public class FigureJPane extends JComponent implements Figure {
      * another paintComponent where step 2 will succeed.</li>
      * </ol>
      * The selection rectangle is always drawn live on the EDT on top.
+     * <p>
+     * The image of the first case is rendered by the same method as the one
+     * of the render thread, although it is rendered on the EDT. When the
+     * contents were painted directly into the graphics of the EDT instead,
+     * the texts of the axes jittered while dragging, because they changed
+     * between the font and the antialiasing of the EDT and those of the
+     * image with every replacement.
      */
     @Override
     public void paintComponent(Graphics g) {
@@ -405,20 +423,17 @@ public class FigureJPane extends JComponent implements Figure {
         // --- CASE 1: Interactive action needs immediate EDT rendering ---
         // When dragging the selection rectangle or panning, we need instant
         // visual feedback, so we paint directly and bypass the buffered image.
-        if (forcePaint) {
-            ((Graphics2D) g).setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-            paintFigureContent((Graphics2D) g,
-                    (float) getWidth() - 1, (float) getHeight() - 1);
+        if (forcePaint && renderer != null) {
             forcePaint = false;
+            if (getWidth() > 0 && getHeight() > 0) {
+                g.drawImage(renderer.renderImage(getWidth(), getHeight()),
+                        0, 0, null);
+            }
 
             // After a direct paint (zoom/pan changed data), the buffered
             // image is now stale → submit a fresh render for subsequent
             // non-interactive repaints.
-            if (renderer != null) {
-                renderer.requestRender();
-            }
+            renderer.requestRender();
 
             // --- CASE 2: Threaded rendering with valid image → just blit ---
         } else if (renderer != null && !isDrawingDeprecated()) {
@@ -440,9 +455,8 @@ public class FigureJPane extends JComponent implements Figure {
 
             // --- CASE 4: No renderer (classic mode) → direct paint ---
         } else {
-            ((Graphics2D) g).setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
+            forcePaint = false;
+            prepareGraphics((Graphics2D) g);
             paintFigureContent((Graphics2D) g,
                     (float) getWidth() - 1, (float) getHeight() - 1);
         }
@@ -485,12 +499,26 @@ public class FigureJPane extends JComponent implements Figure {
     }
 
     /**
-     * Paints the cursors of the cursor modes of all axes, including the axes
-     * of a subplot, with antialiasing for the round point marks.
+     * Sets the font and the rendering hints with which all contents of the
+     * figure are painted, so that the image of the render thread, an image
+     * rendered on the EDT and the cursors which are painted on top of the
+     * image on the EDT use the same text appearance.
      */
-    private void paintInteractiveCursors(Graphics2D g2) {
+    void prepareGraphics(Graphics2D g2) {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setFont(FIGURE_FONT);
+    }
+
+    /**
+     * Paints the cursors of the cursor modes of all axes, including the axes
+     * of a subplot, so that their value boxes use the same font as the
+     * tick labels below them.
+     */
+    private void paintInteractiveCursors(Graphics2D g2) {
+        prepareGraphics(g2);
         for (Axes a : axes) {
             a.paintInteractiveCursors(g2);
         }

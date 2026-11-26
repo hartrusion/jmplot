@@ -24,7 +24,6 @@
 package com.hartrusion.plot;
 
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -132,7 +131,7 @@ public class PaintThreadManager {
                     return; // component not yet laid out
                 }
 
-                renderFrame(w, h);
+                plotImage = renderImage(w, h); // volatile write
                 lastWidth = w;
                 lastHeight = h;
 
@@ -157,17 +156,21 @@ public class PaintThreadManager {
     }
 
     /**
-     * Renders one complete frame into a new BufferedImage.
+     * Renders one complete frame of the figure into a new image. Besides the
+     * render thread, the figure calls this on the EDT for zooming and
+     * panning with the mouse, so that the image which is painted at once and
+     * the image of the render thread which replaces it afterwards are painted
+     * with the same font and rendering hints and look exactly the same.
+     *
+     * @param w width of the image in pixels, greater than zero
+     * @param h height of the image in pixels, greater than zero
+     * @return the rendered image
      */
-    private void renderFrame(int w, int h) {
+    BufferedImage renderImage(int w, int h) {
         BufferedImage img = new BufferedImage(w, h,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
-
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        figure.prepareGraphics(g2);
 
         if (figure.isOpaque()) {
             g2.setColor(figure.getBackground());
@@ -180,7 +183,7 @@ public class PaintThreadManager {
         figure.paintFigureContent(g2, pw, ph);
 
         g2.dispose();
-        plotImage = img;  // volatile write → immediately visible to EDT
+        return img;
     }
 
     /**
