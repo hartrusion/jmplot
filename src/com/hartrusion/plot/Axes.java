@@ -386,9 +386,8 @@ public class Axes {
             case POINT_CURSOR:
                 return movePointCursor(px, py);
             case X_CURSOR:
-                return insertXCursor(px, 1);
             case X_CURSOR_DUAL:
-                return insertXCursor(px, 2);
+                return addXCursor(xaxis.getValueForCoordinate(px));
             default:
                 return false;
         }
@@ -435,14 +434,22 @@ public class Axes {
     }
 
     /**
-     * Inserts an x cursor at the x value of a pixel, unless the maximum
-     * number of x cursors of the cursor mode is reached already.
+     * Inserts an x cursor at an x value, just as a click at this value
+     * would do it. Applications use it to restore cursors after they created
+     * the axes again. The cursor is only inserted if the cursor mode is
+     * X_CURSOR or X_CURSOR_DUAL and the number of x cursors of the mode, one
+     * or two, is not reached yet.
      *
-     * @param px horizontal pixel position of the click
-     * @param maxCount number of x cursors that the cursor mode allows
+     * @param x value on the x axis
      * @return true if a cursor was inserted
      */
-    private boolean insertXCursor(int px, int maxCount) {
+    public boolean addXCursor(float x) {
+        int maxCount = 0;
+        if (cursorMode == CursorMode.X_CURSOR) {
+            maxCount = 1;
+        } else if (cursorMode == CursorMode.X_CURSOR_DUAL) {
+            maxCount = 2;
+        }
         if (xCursors.size() >= maxCount) {
             return false;
         }
@@ -453,7 +460,7 @@ public class Axes {
         } else {
             c.setThemeLight();
         }
-        c.setX(xaxis.getValueForCoordinate(px));
+        c.setX(x);
         xCursors.add(c);
         return true;
     }
