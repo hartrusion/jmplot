@@ -32,8 +32,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
-import java.awt.font.GlyphVector;
-import java.awt.geom.Rectangle2D;
 
 /**
  * 2D line object to be drawn on a axes object. The line has references to the
@@ -199,42 +197,14 @@ public class Line extends CoordinateObject {
 
         if (marker != '\0') {
             Font previousFont = g.getFont();
-
-            // Set up marker font and color
-            Font markerFont = new Font(Font.MONOSPACED, Font.PLAIN,
-                    Math.round(markerSize));
-            g.setFont(markerFont);
-
-            // Create a GlyphVector for the marker character once.
-            // getVisualBounds() gives the bounding box of the actual
-            // rendered glyph pixels – this is what makes centering exact.
-            String markerStr = String.valueOf(marker);
-            GlyphVector gv = markerFont.createGlyphVector(
-                    g2.getFontRenderContext(), markerStr);
-            Rectangle2D visualBounds = gv.getVisualBounds();
-
-            // The visual bounds are relative to the baseline origin (0,0).
-            // To center the glyph on a point (px, py), we need to shift:
-            //   drawX = px - (visualBounds.x + visualBounds.width / 2)
-            //   drawY = py - (visualBounds.y + visualBounds.height / 2)
-            // where visualBounds.x/y are typically negative (left of / above baseline).
-            double offsetX = visualBounds.getX()
-                    + visualBounds.getWidth() / 2.0;
-            double offsetY = visualBounds.getY()
-                    + visualBounds.getHeight() / 2.0;
-
+            MarkerGlyph glyph = new MarkerGlyph(marker, markerSize,
+                    g2.getFontRenderContext());
             for (int idx = 0; idx < xdata.length; idx += markerInterval) {
                 if (!Float.isFinite(xdata[idx]) || !Float.isFinite(ydata[idx])) {
                     continue;
                 }
-                int px = xaxis.getCoordinateValue(xdata[idx]);
-                int py = yaxis.getCoordinateValue(ydata[idx]);
-
-                // Draw the string so that the visual center of the glyph
-                // lands exactly on (px, py).
-                g.drawString(markerStr,
-                        (int) Math.round(px - offsetX),
-                        (int) Math.round(py - offsetY) + 1);
+                glyph.draw(g, xaxis.getCoordinateValue(xdata[idx]),
+                        yaxis.getCoordinateValue(ydata[idx]));
             }
             g.setFont(previousFont);
         }
@@ -496,24 +466,8 @@ public class Line extends CoordinateObject {
 
         // Draw marker in the center of the sample line if a marker is set
         if (marker != '\0') {
-            Font markerFont = new Font(Font.MONOSPACED, Font.PLAIN,
-                    Math.round(markerSize));
-            g.setFont(markerFont);
-
-            String markerStr = String.valueOf(marker);
-            GlyphVector gv = markerFont.createGlyphVector(
-                    g2.getFontRenderContext(), markerStr);
-            Rectangle2D visualBounds = gv.getVisualBounds();
-
-            double offsetX = visualBounds.getX()
-                    + visualBounds.getWidth() / 2.0;
-            double offsetY = visualBounds.getY()
-                    + visualBounds.getHeight() / 2.0;
-
-            int cx = xCoord + sampleLineLength / 2;
-            g.drawString(markerStr,
-                    (int) Math.round(cx - offsetX),
-                    (int) Math.round(yCoord - offsetY) + 1);
+            new MarkerGlyph(marker, markerSize, g2.getFontRenderContext())
+                    .draw(g, xCoord + sampleLineLength / 2, yCoord);
             g.setFont(previousFont);
         }
 
