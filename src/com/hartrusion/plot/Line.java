@@ -70,6 +70,15 @@ public class Line extends CoordinateObject {
     private boolean externalDataSource = false;
 
     /**
+     * True if the x data is finite and sorted in ascending order, which is
+     * the usual case of a time series. It allows findNearestIndexByX to use a
+     * binary search, which keeps a dragged x cursor fast on large data. The
+     * value is determined by setData only and is false for an external data
+     * source, because its values can change at any time.
+     */
+    private boolean xAscending = false;
+
+    /**
      * The marker character, e.g. 'o', 'x', '*'. '\0' means no marker.
      */
     private char marker = '\0';
@@ -124,6 +133,7 @@ public class Line extends CoordinateObject {
             yMin = 0;
             yMax = 0;
         }
+        updateXAscendingProperty();
     }
 
     /**
@@ -139,16 +149,135 @@ public class Line extends CoordinateObject {
             throw new IllegalArgumentException("Length mismatch");
         }
         externalDataSource = true;
+        xAscending = false;
         xdata = x;
         ydata = y;
+    }
+
+    private void updateXAscendingProperty() {
+        xAscending = true;
+        float previous = Float.NEGATIVE_INFINITY;
+        for (int idx = 0; idx < xdata.length; idx++) {
+            if (!Float.isFinite(xdata[idx]) || xdata[idx] < previous) {
+                xAscending = false;
+                return;
+            }
+            previous = xdata[idx];
+        }
     }
 
     public void setDrawingDeprecated() {
         drawingDeprecated = true;
     }
-    
+
     public boolean isDrawingDeprecated() {
         return drawingDeprecated;
+    }
+
+    public float getXValue(int index) {
+        return xdata[index];
+    }
+
+    public float getYValue(int index) {
+        return ydata[index];
+    }
+
+    /**
+     * Finds the data point whose x value lies closest to a given x value,
+     * without interpolating between the points. Used by the x cursor to mark
+     * the data point that really exists next to the cursor line. If the x
+     * data is sorted in ascending order, a binary search is used, which may
+     * return a point with a non-finite y value that the caller has to skip.
+     * Otherwise all points are compared, and points with a non-finite x or y
+     * value are skipped.
+     *
+     * @param x value on the x axis
+     * @return index of the closest point, or -1 if there is none
+     */
+    public int findNearestIndexByX(float x) {
+        if (xdata == null || xdata.length == 0 || !Float.isFinite(x)) {
+            return -1;
+        }
+        if (xAscending) {
+            int found = java.util.Arrays.binarySearch(xdata, x);
+            if (found >= 0) {
+                return found;
+            }
+            int insertion = -found - 1;
+            if (insertion == 0) {
+                return 0;
+            }
+            if (insertion == xdata.length) {
+                return xdata.length - 1;
+            }
+            if (x - xdata[insertion - 1] <= xdata[insertion] - x) {
+                return insertion - 1;
+            }
+            return insertion;
+        }
+        int nearestIndex = -1;
+        float nearestDistance = Float.POSITIVE_INFINITY;
+        for (int idx = 0; idx < xdata.length; idx++) {
+            if (!Float.isFinite(xdata[idx]) || !Float.isFinite(ydata[idx])) {
+                continue;
+            }
+            float distance = Math.abs(xdata[idx] - x);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestIndex = idx;
+            }
+        }
+        return nearestIndex;
+    }
+
+    /**
+     * Finds the visible data point which lies closest to a pixel on the
+     * screen. The distance is measured in pixels, because x and y values
+     * have different units, and both values are converted with the rulers of
+     * this line, so that lines of additional y axes are handled correctly.
+     * Used by the axes to place the point cursor on a click.
+     *
+     * @param px horizontal pixel position, for example of a mouse click
+     * @param py vertical pixel position
+     * @return index of the closest point inside the axes box, or -1 if no
+     * point of this line is visible
+     */
+    public int findNearestVisibleIndex(int px, int py) {
+        if (xdata == null) {
+            return -1;
+        }
+        int nearestIndex = -1;
+        long nearestDistance = Long.MAX_VALUE;
+        for (int idx = 0; idx < xdata.length; idx++) {
+            if (!Float.isFinite(xdata[idx]) || !Float.isFinite(ydata[idx])
+                    || xdata[idx] < xaxis.lim[0] || xdata[idx] > xaxis.lim[1]
+                    || ydata[idx] < yaxis.lim[0]
+                    || ydata[idx] > yaxis.lim[1]) {
+                continue;
+            }
+            long distance = getSquaredPixelDistance(idx, px, py);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestIndex = idx;
+            }
+        }
+        return nearestIndex;
+    }
+
+    /**
+     * Returns the squared distance in pixels between a data point and a
+     * pixel on the screen. The square is sufficient to compare distances and
+     * avoids the square root.
+     *
+     * @param index index of the data point
+     * @param px horizontal pixel position
+     * @param py vertical pixel position
+     * @return squared distance in pixels
+     */
+    public long getSquaredPixelDistance(int index, int px, int py) {
+        long dx = xaxis.getCoordinateValue(xdata[index]) - px;
+        long dy = yaxis.getCoordinateValue(ydata[index]) - py;
+        return dx * dx + dy * dy;
     }
 
     /**

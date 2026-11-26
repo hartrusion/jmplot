@@ -60,6 +60,15 @@ public class Cursor extends CoordinateObject {
     private float x;
     private float y;
 
+    /**
+     * True if a value box with the x and y value is drawn right above the
+     * crosshair. It is off by default and switched on by the axes for the
+     * point cursor of the cursor mode POINT_CURSOR.
+     */
+    private boolean valueLabelVisible = false;
+
+    private final ValueBox valueBox = new ValueBox();
+
     // 1: Cursor draw ends excatly before it overwrites the box lines.
     // 0: Cursor draw can be drawn exactly on the box border line
     // -1: Cursor draw will be drawn 1 px over the box border line.
@@ -91,6 +100,7 @@ public class Cursor extends CoordinateObject {
      */
     public void setThemeDark() {
         color = THEME_DARK_COLOR;
+        valueBox.setThemeDark();
     }
 
     /**
@@ -102,6 +112,26 @@ public class Cursor extends CoordinateObject {
      */
     public void setThemeLight() {
         color = THEME_LIGHT_COLOR;
+        valueBox.setThemeLight();
+    }
+
+    /**
+     * Shows or hides the value box right above the crosshair, which contains
+     * the x and the y value of the cursor in the form "x | y", formatted by
+     * the rulers of the cursor.
+     *
+     * @param visible true to show the value box
+     */
+    public void setValueLabelVisible(boolean visible) {
+        valueLabelVisible = visible;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
     }
 
     /**
@@ -165,7 +195,13 @@ public class Cursor extends CoordinateObject {
                 xMiddle + CROSSHAIR_WIDTH, yMiddle);
         g.drawLine(xMiddle - CROSSHAIR_WIDTH, yMiddle, 
                 xMiddle - CROSSHAIR_WIDTH, yMiddle);
-        
+
+        if (valueLabelVisible) {
+            valueBox.paintRightAbove(g, xaxis.formatCursorValue(x) + " | "
+                    + yaxis.formatCursorValue(y), xMiddle, yMiddle,
+                    CROSSHAIR_WIDTH, boxArea);
+        }
+
         g.setClip(previousClip); // restore previous clipping area
     }
 }

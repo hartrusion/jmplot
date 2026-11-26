@@ -142,6 +142,39 @@ public class Axes {
      */
     private final List<AxesLimitListener> limitListeners = new ArrayList<>();
 
+    /**
+     * Behaviour of this axes on a click with the left mouse button, which is
+     * NONE by default so that clicks do not create cursors.
+     */
+    private CursorMode cursorMode = CursorMode.NONE;
+
+    /**
+     * Crosshair cursor of the cursor mode POINT_CURSOR with a value box, or
+     * null until the first click. It is kept apart from the cursors list,
+     * because it is painted as an overlay on top of the rendered figure and
+     * because its y axis ruler changes to the ruler of the line that was
+     * clicked.
+     */
+    private Cursor pointCursor;
+
+    /**
+     * Vertical cursors of the cursor modes X_CURSOR and X_CURSOR_DUAL, which
+     * hold one or two cursors, in the order in which they were created.
+     */
+    private final List<XCursor> xCursors = new ArrayList<>();
+
+    /**
+     * Value box which shows the distance between two x cursors.
+     */
+    private final ValueBox xCursorDeltaBox = new ValueBox();
+
+    /**
+     * Distance between the upper edge of the box and the value box with the
+     * delta x of two x cursors, which places it below the cursor handles.
+     */
+    private static final int X_CURSOR_DELTA_BOX_OFFSET
+            = XCursor.HANDLE_HEIGHT + 3;
+
 //    Axes() {
 //    }
     /**
@@ -155,6 +188,7 @@ public class Axes {
             lines.clear();
             cursors.clear();
             texts.clear();
+            clearInteractiveCursors();
         }
         lines.add(l);
         // Auto-Assign line colors when adding if no line color is defined yet
@@ -266,6 +300,239 @@ public class Axes {
      */
     public void clearCursors() {
         cursors.clear();
+    }
+
+    /**
+     * Sets how this axes reacts to a click with the left mouse button into
+     * its box. A click is a press and release at nearly the same position,
+     * so that zooming with a dragged rectangle and panning with the right
+     * mouse button keep working in every mode.
+     * <ul>
+     * <li>NONE: Clicks are ignored, which is the default.</li>
+     * <li>POINT_CURSOR: Each click moves a crosshair cursor to the visible
+     * data point of all lines that lies closest to the click on the screen,
+     * and a value box shows its x and y value.</li>
+     * <li>X_CURSOR: The first click inserts a vertical cursor, which marks the
+     * data point closest to its x value on each line without
+     * interpolation.</li>
+     * <li>X_CURSOR_DUAL: Like X_CURSOR, but the second click inserts a second
+     * cursor, and the distance of both is shown.</li>
+     * </ul>
+     * The x cursors are moved by dragging their triangle handle, whereas
+     * further clicks do not remove or move them. All cursors store their
+     * position as axis values, so that they keep their place on the data
+     * when the axes are zoomed or panned. A change of the mode removes the
+     * cursors of the previous mode.
+     *
+     * <p>
+     * LLM code generated with Claude Opus 5.5
+     *
+     * @param mode new cursor mode
+     * @throws UnsupportedOperationException for Y_CURSOR, which is not
+     * implemented yet
+     */
+    public void setCursorMode(CursorMode mode) {
+        if (mode == CursorMode.Y_CURSOR) {
+            throw new UnsupportedOperationException(
+                    "The cursor mode Y_CURSOR is not implemented yet.");
+        }
+        if (mode == cursorMode) {
+            return;
+        }
+        clearInteractiveCursors();
+        cursorMode = mode;
+    }
+
+    public CursorMode getCursorMode() {
+        return cursorMode;
+    }
+
+    /**
+     * Removes the point cursor and the x cursors which were created by
+     * clicks in the current cursor mode, while the mode itself stays active.
+     * Cursors added with addCursor or setCursor are not affected.
+     */
+    public void clearInteractiveCursors() {
+        pointCursor = null;
+        xCursors.clear();
+    }
+
+    /**
+     * Returns the x values of the x cursors in the order in which they were
+     * created.
+     *
+     * @return array with zero, one or two values
+     */
+    public float[] getXCursorValues() {
+        float[] values = new float[xCursors.size()];
+        for (int idx = 0; idx < values.length; idx++) {
+            values[idx] = xCursors.get(idx).getX();
+        }
+        return values;
+    }
+
+    /**
+     * Handles a click into the box according to the cursor mode. Called from
+     * the figure pane when the left mouse button was released at nearly the
+     * position where it was pressed.
+     *
+     * @param px horizontal pixel position of the click
+     * @param py vertical pixel position of the click
+     * @return true if a cursor was created or moved, so that the figure has
+     * to be painted again
+     */
+    boolean handleCursorClick(int px, int py) {
+        switch (cursorMode) {
+            case POINT_CURSOR:
+                return movePointCursor(px, py);
+            case X_CURSOR:
+                return insertXCursor(px, 1);
+            case X_CURSOR_DUAL:
+                return insertXCursor(px, 2);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Moves the point cursor to the visible data point of all lines which
+     * lies closest to a pixel. The cursor is attached to the y axis ruler of
+     * the line that owns the point, so that it is also placed correctly on
+     * lines of additional y axes.
+     */
+    private boolean movePointCursor(int px, int py) {
+        Line nearestLine = null;
+        int nearestIndex = -1;
+        long nearestDistance = Long.MAX_VALUE;
+        for (Line l : lines) {
+            int index = l.findNearestVisibleIndex(px, py);
+            if (index < 0) {
+                continue;
+            }
+            long distance = l.getSquaredPixelDistance(index, px, py);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestIndex = index;
+                nearestLine = l;
+            }
+        }
+        if (nearestLine == null) {
+            return false;
+        }
+        if (pointCursor == null) {
+            pointCursor = new Cursor();
+            pointCursor.setValueLabelVisible(true);
+            if (themeDark) {
+                pointCursor.setThemeDark();
+            } else {
+                pointCursor.setThemeLight();
+            }
+        }
+        pointCursor.initComponent(xaxis, nearestLine.getYAxis());
+        pointCursor.setPoint(nearestLine.getXValue(nearestIndex),
+                nearestLine.getYValue(nearestIndex));
+        return true;
+    }
+
+    /**
+     * Inserts an x cursor at the x value of a pixel, unless the maximum
+     * number of x cursors of the cursor mode is reached already.
+     *
+     * @param px horizontal pixel position of the click
+     * @param maxCount number of x cursors that the cursor mode allows
+     * @return true if a cursor was inserted
+     */
+    private boolean insertXCursor(int px, int maxCount) {
+        if (xCursors.size() >= maxCount) {
+            return false;
+        }
+        XCursor c = new XCursor();
+        c.initComponent(xaxis, yaxis);
+        if (themeDark) {
+            c.setThemeDark();
+        } else {
+            c.setThemeLight();
+        }
+        c.setX(xaxis.getValueForCoordinate(px));
+        xCursors.add(c);
+        return true;
+    }
+
+    /**
+     * Returns the x cursor whose triangle handle lies at a pixel. Called from
+     * the figure pane on a mouse press and on mouse movements to find a
+     * cursor that can be dragged.
+     *
+     * @param px horizontal pixel position of the mouse
+     * @param py vertical pixel position of the mouse
+     * @return x cursor, or null if no handle is hit
+     */
+    XCursor findXCursorHandle(int px, int py) {
+        // The last cursor is painted on top, so it is found first.
+        for (int idx = xCursors.size() - 1; idx >= 0; idx--) {
+            if (xCursors.get(idx).isHandleHit(px, py)) {
+                return xCursors.get(idx);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Moves an x cursor to the x value of a pixel, which is limited to the
+     * box so that the cursor cannot be dragged out of sight. Called from the
+     * figure pane while the handle of the cursor is dragged.
+     *
+     * @param c x cursor to move
+     * @param px horizontal pixel position of the mouse
+     */
+    void moveXCursor(XCursor c, int px) {
+        int limited = Math.max(xaxis.getCoordinateLineStart(),
+                Math.min(xaxis.getCoordinateLineEnd(), px));
+        c.setX(xaxis.getValueForCoordinate(limited));
+    }
+
+    /**
+     * Paints the point cursor, the x cursors and the delta x of two x
+     * cursors. Called from the figure pane after the rendered figure was
+     * drawn, so that the cursors lie on top of the lines and the axis
+     * rulers, and so that moving a cursor does not require the lines to be
+     * rendered again. The pixel positions are calculated with the rulers as
+     * they were set by the last painting of this axes.
+     *
+     * @param g graphics object of the figure pane
+     */
+    void paintInteractiveCursors(Graphics g) {
+        for (XCursor c : xCursors) {
+            c.paintContent(g, lines);
+        }
+        if (xCursors.size() == 2) {
+            paintXCursorDelta(g);
+        }
+        if (pointCursor != null) {
+            pointCursor.paintContent(g);
+        }
+    }
+
+    /**
+     * Paints the distance between the two x cursors in a value box at the
+     * top of the box, centered between both cursors. The positions are
+     * limited to the box, so that the box stays visible while one cursor is
+     * outside of the current limits.
+     */
+    private void paintXCursorDelta(Graphics g) {
+        float x1 = xCursors.get(0).getX();
+        float x2 = xCursors.get(1).getX();
+        int left = xaxis.getCoordinateLineStart();
+        int right = xaxis.getCoordinateLineEnd();
+        int px1 = Math.max(left, Math.min(right, xaxis.getCoordinateValue(x1)));
+        int px2 = Math.max(left, Math.min(right, xaxis.getCoordinateValue(x2)));
+        if (px1 == px2 && (px1 == left || px1 == right)) {
+            return; // both cursors are outside on the same side
+        }
+        String text = "ΔX = " + xaxis.formatCursorValue(Math.abs(x2 - x1));
+        int width = xCursorDeltaBox.getSize(g, text).width;
+        xCursorDeltaBox.paint(g, text, (px1 + px2) / 2 - width / 2,
+                yaxis.getCoordinateLineEnd() + X_CURSOR_DELTA_BOX_OFFSET);
     }
 
     /**
@@ -609,6 +876,13 @@ public class Axes {
         for (Cursor c : cursors) {
             c.setThemeDark();
         }
+        if (pointCursor != null) {
+            pointCursor.setThemeDark();
+        }
+        for (XCursor c : xCursors) {
+            c.setThemeDark();
+        }
+        xCursorDeltaBox.setThemeDark();
         for (Text t : texts) {
             t.setThemeDark();
         }
@@ -631,6 +905,13 @@ public class Axes {
         for (Cursor c : cursors) {
             c.setThemeLight();
         }
+        if (pointCursor != null) {
+            pointCursor.setThemeLight();
+        }
+        for (XCursor c : xCursors) {
+            c.setThemeLight();
+        }
+        xCursorDeltaBox.setThemeLight();
         for (Text t : texts) {
             t.setThemeLight();
         }

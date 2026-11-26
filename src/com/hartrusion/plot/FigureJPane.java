@@ -74,6 +74,20 @@ public class FigureJPane extends JComponent implements Figure {
     private Axes activeAxes = null;
 
     /**
+     * X cursor whose handle is dragged with the left mouse button, or null if
+     * no cursor is dragged. While it is set, a left drag moves the cursor
+     * instead of drawing a zoom rectangle.
+     */
+    private XCursor draggedXCursor = null;
+
+    /**
+     * Maximum distance in pixels between the press and the release of the
+     * left mouse button in both directions which still counts as a click,
+     * so that a slightly shaking hand does not prevent a click.
+     */
+    private static final int CLICK_TOLERANCE = 3;
+
+    /**
      * The background renderer, null when in classic mode.
      */
     private PaintThreadManager renderer = null;
@@ -96,6 +110,13 @@ public class FigureJPane extends JComponent implements Figure {
                 // left mouse button: zoom rectangle start
                 // right mouse button: start dragging from this point
                 if (e.getButton() == MouseEvent.BUTTON1) {
+                    // A press on the handle of an x cursor starts dragging
+                    // the cursor instead of a zoom rectangle.
+                    draggedXCursor = activeAxes.findXCursorHandle(
+                            e.getX(), e.getY());
+                    if (draggedXCursor != null) {
+                        return;
+                    }
                     // Linke Taste => Zoom-Rechteck Start
                     leftDragStart = e.getPoint();
                     selectionRect = new Rectangle(e.getX(), e.getY(), 0, 0);
@@ -114,6 +135,25 @@ public class FigureJPane extends JComponent implements Figure {
                 }
 
                 if (e.getButton() == MouseEvent.BUTTON1) {
+                    if (draggedXCursor != null) {
+                        draggedXCursor = null;
+                        return;
+                    }
+                    // A release near the press position is a click, which
+                    // is passed to the cursor mode of the axes. Only the
+                    // overlay changes, so the rendered image is reused.
+                    if (leftDragStart != null
+                            && Math.abs(e.getX() - leftDragStart.x)
+                            <= CLICK_TOLERANCE
+                            && Math.abs(e.getY() - leftDragStart.y)
+                            <= CLICK_TOLERANCE) {
+                        activeAxes.handleCursorClick(
+                                leftDragStart.x, leftDragStart.y);
+                        selectionRect = null;
+                        leftDragStart = null;
+                        repaint();
+                        return;
+                    }
                     // Apply the zoom for the selected rectange on mouse release
                     if (selectionRect != null
                             && selectionRect.width > 5
@@ -138,6 +178,15 @@ public class FigureJPane extends JComponent implements Figure {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (activeAxes == null) {
+                    return;
+                }
+
+                // Move a grabbed x cursor. Only the overlay is painted
+                // again, so the lines are not rendered while dragging.
+                if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK)
+                        != 0 && draggedXCursor != null) {
+                    activeAxes.moveXCursor(draggedXCursor, e.getX());
+                    repaint();
                     return;
                 }
 
@@ -174,6 +223,22 @@ public class FigureJPane extends JComponent implements Figure {
                     rightDragStart = e.getPoint();
                     forcePaint = true;
                     repaint();
+                }
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                // Show a resize pointer over the handle of an x cursor, so
+                // that it is visible that the cursor can be dragged.
+                Axes targetAxes = getAxes(e.getX(), e.getY());
+                int pointerType = java.awt.Cursor.DEFAULT_CURSOR;
+                if (targetAxes != null && targetAxes.findXCursorHandle(
+                        e.getX(), e.getY()) != null) {
+                    pointerType = java.awt.Cursor.E_RESIZE_CURSOR;
+                }
+                if (getCursor().getType() != pointerType) {
+                    setCursor(java.awt.Cursor.getPredefinedCursor(
+                            pointerType));
                 }
             }
 
@@ -382,6 +447,10 @@ public class FigureJPane extends JComponent implements Figure {
                     (float) getWidth() - 1, (float) getHeight() - 1);
         }
 
+        // Cursors of the cursor modes are drawn live on the EDT on top of the
+        // figure, so that dragging them does not render the lines again.
+        paintInteractiveCursors((Graphics2D) g);
+
         // Selection rectangle is always drawn live on the EDT for better
         // visuals sticking on the mouse.
         if (selectionRect != null) {
@@ -412,6 +481,24 @@ public class FigureJPane extends JComponent implements Figure {
         }
         for (Legend legend : legends) {
             legend.awtPaintComponents(g2);
+        }
+    }
+
+    /**
+     * Paints the cursors of the cursor modes of all axes, including the axes
+     * of a subplot, with antialiasing for the round point marks.
+     */
+    private void paintInteractiveCursors(Graphics2D g2) {
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        for (Axes a : axes) {
+            a.paintInteractiveCursors(g2);
+        }
+        if (subPlot != null) {
+            Iterator<Axes> it = subPlot.getAxesIterator();
+            while (it.hasNext()) {
+                it.next().paintInteractiveCursors(g2);
+            }
         }
     }
 

@@ -98,6 +98,27 @@ abstract class AxisRuler extends AxisElementProperties {
     private NumberFormat numberFormat = DecimalFormat.getInstance();
 
     /**
+     * Number of fraction digits of the current tick labels, which is the
+     * base for the precision of cursor values.
+     */
+    private int tickFractionDigits = 0;
+
+    /**
+     * Number of fraction digits that cursor values show in addition to the
+     * tick labels, because a cursor value lies between the ticks and is
+     * read more precisely than the axis scale.
+     */
+    private static final int CURSOR_VALUE_EXTRA_DIGITS = 2;
+
+    /**
+     * Format of the cursor values, which uses the locale of the system like
+     * the tick labels. It is separate from numberFormat, because it has a
+     * fixed number of fraction digits whereas the tick labels have a maximum
+     * number only.
+     */
+    private final NumberFormat cursorValueFormat = DecimalFormat.getInstance();
+
+    /**
      * Counts the changes of the limits and ticks of this ruler. The counter is
      * compared with paintedModificationCount to find out whether the ruler
      * changed after it was painted the last time, because a figure which
@@ -401,6 +422,7 @@ abstract class AxisRuler extends AxisElementProperties {
     private void generateTickLabels(int fractionDigits) {
         // All methods which set ticks from values end here.
         modificationCount++;
+        tickFractionDigits = fractionDigits;
         numberFormat.setMaximumFractionDigits(fractionDigits);
         if (tickLabels.length != tick.length) {
             tickLabels = new String[tick.length];
@@ -408,6 +430,22 @@ abstract class AxisRuler extends AxisElementProperties {
         for (int idx = 0; idx < tickLabels.length; idx++) {
             tickLabels[idx] = numberFormat.format(tick[idx]);
         }
+    }
+
+    /**
+     * Formats a value of this axis for the value box of a cursor. The value
+     * is written in the locale of the system like the tick labels and with
+     * two fraction digits more than the current tick labels, so that the
+     * precision follows the zoom of the axis.
+     *
+     * @param value value on this axis
+     * @return formatted value
+     */
+    public String formatCursorValue(float value) {
+        int digits = tickFractionDigits + CURSOR_VALUE_EXTRA_DIGITS;
+        cursorValueFormat.setMinimumFractionDigits(digits);
+        cursorValueFormat.setMaximumFractionDigits(digits);
+        return cursorValueFormat.format(value);
     }
 
     public void setLabel(String s) {
