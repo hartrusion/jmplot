@@ -290,6 +290,23 @@ public class FigureJPane extends JComponent implements Figure {
     }
 
     /**
+     * Ends the background rendering when the figure is removed from a
+     * displayable container, which Swing reports for example when the figure
+     * is removed from its parent or when the window or internal frame that
+     * contains it is disposed. Without this, the render thread would keep
+     * the figure with all of its lines alive after the application dropped
+     * it. The rendering starts again by itself when the figure is shown
+     * again.
+     */
+    @Override
+    public void removeNotify() {
+        if (renderer != null) {
+            renderer.release();
+        }
+        super.removeNotify();
+    }
+
+    /**
      * Checks if the current drawing (BufferedImage) is deprecated and needs to
      * be regenerated. This queries all contained axes and their lines.
      * <p>

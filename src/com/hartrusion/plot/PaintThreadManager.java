@@ -65,12 +65,32 @@ public class PaintThreadManager {
     private final AtomicBoolean renderRequested = new AtomicBoolean(false);
 
     /**
-     * Single-thread executor – one thread is kept alive and ready in the pool.
-     * When a render task is submitted it executes immediately (no thread
-     * creation delay). When idle, the thread simply waits (no CPU usage,
-     * no polling). Uses a daemon thread so it won't prevent JVM shutdown.
+     * Single-thread executor – one thread is kept alive and ready in the pool
+     * as long as the figure is displayable. When a render task is submitted
+     * it executes immediately (no thread creation delay). When idle, the
+     * thread simply waits (no CPU usage, no polling). Uses a daemon thread so
+     * it won't prevent JVM shutdown.
+     * <p>
+     * The executor is created with the first render request and shut down by
+     * release when the figure is removed from a displayable container, for
+     * example because the figures of a window are replaced or because the
+     * window or internal frame that contains the figure is disposed. A thread
+     * which waits for tasks is a garbage collection root, so an executor that
+     * is never shut down would keep its thread and everything reachable from
+     * it alive forever. The next render request after the figure was added
+     * again creates a new executor. Null while no executor exists. Guarded by
+     * the monitor of this object, because release is called on the EDT while
+     * the render thread may submit a follow-up task.
      */
-    private final ExecutorService executor;
+    private ExecutorService executor = null;
+
+    /**
+     * Name of the render thread, which contains the identity hash of the
+     * figure to tell the threads of several figures apart in a debugger. It
+     * is determined once in the constructor, so that the thread factory only
+     * captures this string and not the figure.
+     */
+    private final String threadName;
 
     /**
      * Dimensions of the last rendered image, used to detect resize.
@@ -80,17 +100,8 @@ public class PaintThreadManager {
 
     PaintThreadManager(FigureJPane owner) {
         this.figure = owner;
-        // A single-thread executor with a daemon thread factory.
-        // The thread sits idle when no task is submitted (zero CPU).
-        // When a task is submitted, it starts immediately.
-        this.executor = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r,
-                    "jmplot-renderer-"
-                    + Integer.toHexString(
-                            System.identityHashCode(figure)));
-            t.setDaemon(true);
-            return t;
-        });
+        this.threadName = "jmplot-renderer-"
+                + Integer.toHexString(System.identityHashCode(owner));
     }
 
     /**
@@ -107,12 +118,59 @@ public class PaintThreadManager {
      * <p>
      * If a render task is already in progress, this call is a no-op
      * (the running task will produce a fresh image anyway).
+     * <p>
+     * A figure which is not displayable is not rendered, because nothing of
+     * it is visible and because a render task would start the thread again
+     * that release has just ended. Since release also discards the image,
+     * the first paint after the figure was added again finds no image and
+     * requests the rendering that was skipped here.
      */
     public void requestRender() {
+        if (!figure.isDisplayable()) {
+            return;
+        }
         renderRequested.set(true);
         if (rendering.compareAndSet(false, true)) {
-            executor.submit(this::renderTask);
+            submitRenderTask();
         }
+    }
+
+    /**
+     * Submits the render task to the executor and creates the executor if
+     * none exists, which is the case before the first rendering and after
+     * release. The caller must have set the rendering flag.
+     */
+    private synchronized void submitRenderTask() {
+        if (executor == null) {
+            // The factory captures only the name and not this object, so
+            // that the thread can never keep the figure alive by itself.
+            String name = threadName;
+            executor = Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, name);
+                t.setDaemon(true);
+                return t;
+            });
+        }
+        executor.submit(this::renderTask);
+    }
+
+    /**
+     * Ends the render thread and discards the rendered image, so that the
+     * figure and its data are no longer referenced by a running thread and
+     * can be garbage collected once the application has dropped the figure.
+     * A render task which is just running is completed. Called from
+     * FigureJPane.removeNotify when the figure is removed from a displayable
+     * container, and the figure can be shown again afterwards, because the
+     * next render request creates a new executor.
+     */
+    synchronized void release() {
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+        }
+        plotImage = null;
+        lastWidth = -1;
+        lastHeight = -1;
     }
 
     /**
@@ -147,10 +205,11 @@ public class PaintThreadManager {
             rendering.set(false);
             // A request that arrived between the last check of the loop and
             // the reset above found the task still running and did not
-            // submit a new one, so it is submitted here.
-            if (renderRequested.get()
+            // submit a new one, so it is submitted here. A figure which was
+            // released in the meantime is not rendered anymore.
+            if (renderRequested.get() && figure.isDisplayable()
                     && rendering.compareAndSet(false, true)) {
-                executor.submit(this::renderTask);
+                submitRenderTask();
             }
         }
     }
